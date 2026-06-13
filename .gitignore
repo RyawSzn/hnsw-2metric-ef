@@ -7,7 +7,7 @@ python_bindings/tests/__pycache__/
 hnswlib.cpython*.so
 var/
 .idea/
-./github
+.github/
 .vscode/
 .vs/
 .cache/
