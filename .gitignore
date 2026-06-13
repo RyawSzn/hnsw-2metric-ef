@@ -7,9 +7,10 @@ python_bindings/tests/__pycache__/
 hnswlib.cpython*.so
 var/
 .idea/
+./github
 .vscode/
 .vs/
-.cahce/
+.cache/
 **.DS_Store
 *.pyc
 
