@@ -90,56 +90,37 @@ target_link_libraries(reader PRIVATE
     ${HDF5_LIBRARIES}
 )
 
-add_executable(corr research/corr.cpp)
-target_include_directories(corr PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(corr PRIVATE
-    hnswlib
-    Eigen3::Eigen
-    ${HDF5_CXX_LIBRARIES}
-    ${HDF5_LIBRARIES}
-
-)
-
-
-add_executable(lookup_5x10 research/lookup_5x10.cpp)
-target_include_directories(lookup_5x10 PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(lookup_5x10 PRIVATE
+add_executable(lookup_dynamic research/lookup_dynamic.cpp)
+target_include_directories(lookup_dynamic PRIVATE ${HDF5_INCLUDE_DIRS})
+target_link_libraries(lookup_dynamic PRIVATE
     hnswlib
     Eigen3::Eigen
     ${HDF5_CXX_LIBRARIES}
     ${HDF5_LIBRARIES}
 )
 
-add_executable(compare research/compare.cpp)
-target_include_directories(compare PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(compare PRIVATE
+add_executable(lookup_fast_probe research/lookup_fast_probe.cpp)
+target_include_directories(lookup_fast_probe PRIVATE ${HDF5_INCLUDE_DIRS})
+target_link_libraries(lookup_fast_probe PRIVATE
     hnswlib
     Eigen3::Eigen
     ${HDF5_CXX_LIBRARIES}
     ${HDF5_LIBRARIES}
 )
 
-add_executable(compare_M research/compare_M.cpp)
-target_include_directories(compare_M PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(compare_M PRIVATE
+add_executable(lookup_2hop research/lookup_2hop.cpp)
+target_include_directories(lookup_2hop PRIVATE ${HDF5_INCLUDE_DIRS})
+target_link_libraries(lookup_2hop PRIVATE
     hnswlib
     Eigen3::Eigen
     ${HDF5_CXX_LIBRARIES}
     ${HDF5_LIBRARIES}
 )
 
-add_executable(lookup_RC research/lookup_RC.cpp)
-target_include_directories(lookup_RC PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(lookup_RC PRIVATE
-    hnswlib
-    Eigen3::Eigen
-    ${HDF5_CXX_LIBRARIES}
-    ${HDF5_LIBRARIES}
-)
 
-add_executable(lookup_RC_10x10 research/lookup_RC_10x10.cpp)
-target_include_directories(lookup_RC_10x10 PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(lookup_RC_10x10 PRIVATE
+add_executable(time_metrics research/time_metrics.cpp)
+target_include_directories(time_metrics PRIVATE ${HDF5_INCLUDE_DIRS})
+target_link_libraries(time_metrics PRIVATE
     hnswlib
     Eigen3::Eigen
     ${HDF5_CXX_LIBRARIES}
