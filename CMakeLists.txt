@@ -99,30 +99,14 @@ target_link_libraries(lookup_dynamic PRIVATE
     ${HDF5_LIBRARIES}
 )
 
-add_executable(lookup_fast_probe research/lookup_fast_probe.cpp)
-target_include_directories(lookup_fast_probe PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(lookup_fast_probe PRIVATE
+add_executable(hardness research/hardness_diagnostic.cpp)
+target_include_directories(hardness PRIVATE ${HDF5_INCLUDE_DIRS})
+target_link_libraries(hardness PRIVATE
     hnswlib
     Eigen3::Eigen
     ${HDF5_CXX_LIBRARIES}
     ${HDF5_LIBRARIES}
 )
-
-add_executable(lookup_2hop research/lookup_2hop.cpp)
-target_include_directories(lookup_2hop PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(lookup_2hop PRIVATE
-    hnswlib
-    Eigen3::Eigen
-    ${HDF5_CXX_LIBRARIES}
-    ${HDF5_LIBRARIES}
-)
-
-
-add_executable(time_metrics research/time_metrics.cpp)
-target_include_directories(time_metrics PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(time_metrics PRIVATE
-    hnswlib
-    Eigen3::Eigen
-    ${HDF5_CXX_LIBRARIES}
-    ${HDF5_LIBRARIES}
-)
+add_executable(test_table_recall research/test_table_recall.cpp)
+target_include_directories(test_table_recall PRIVATE ${HDF5_INCLUDE_DIRS})
+target_link_libraries(test_table_recall PRIVATE hnswlib Eigen3::Eigen ${HDF5_CXX_LIBRARIES})
