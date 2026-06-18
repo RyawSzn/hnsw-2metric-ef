@@ -7,6 +7,7 @@ EXPERIMENTS_ROOT="$EXPERIMENTS_ROOT"
 mkdir -p "$EXPERIMENTS_ROOT"
 
 dirs=(
+  2metric
   index
   data
   estimation_table

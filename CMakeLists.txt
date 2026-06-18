@@ -131,3 +131,11 @@ target_link_libraries(test_all_rv PRIVATE hnswlib Eigen3::Eigen ${HDF5_CXX_LIBRA
 add_executable(test_final_rank research/test_final_rank.cpp)
 target_include_directories(test_final_rank PRIVATE ${HDF5_INCLUDE_DIRS})
 target_link_libraries(test_final_rank PRIVATE hnswlib Eigen3::Eigen ${HDF5_CXX_LIBRARIES})
+
+add_executable(run_2metric 2metric/run_2metric.cpp)
+target_include_directories(run_2metric PRIVATE ${HDF5_INCLUDE_DIRS})
+target_link_libraries(run_2metric PRIVATE hnswlib Eigen3::Eigen Boost::boost ${HDF5_CXX_LIBRARIES} ${HDF5_LIBRARIES})
+
+add_executable(compare_ef 2metric/compare/compare_ef.cpp)
+target_include_directories(compare_ef PRIVATE ${HDF5_INCLUDE_DIRS})
+target_link_libraries(compare_ef PRIVATE hnswlib Eigen3::Eigen Boost::boost ${HDF5_CXX_LIBRARIES} ${HDF5_LIBRARIES})

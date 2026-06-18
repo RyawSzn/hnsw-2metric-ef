@@ -15,18 +15,21 @@
 
 using namespace hnswlib;
 
-const std::vector<float> GAMMAS = {2.0f, 5.0f, 8.0f, 10.0f, 12.0f, 15.0f, 20.0f, 30.0f};
-
 struct EdgeEval {
     float dist;
     bool is_revisit;
 };
 
 struct ProbeRes {
-    std::vector<float> rv_rank;
+    float RC;
+    float rv_rank;
 };
 
-ProbeRes probe_query_rank(HierarchicalNSW<float>* alg_hnsw, const float* query, int L, int ef_probe_cap) {
+ProbeRes probe_query(HierarchicalNSW<float>* alg_hnsw, const float* query, const Eigen::RowVectorXf& global_mean, int L, int ef_probe_cap) {
+    Eigen::Map<const Eigen::RowVectorXf> q(query, global_mean.size());
+    float th_mean = q.dot(global_mean);
+    float d_mean = std::max(0.01f, 1.0f - th_mean);
+
     tableint currObj = alg_hnsw->enterpoint_node_;
     float curdist = alg_hnsw->fstdistfunc_(query, alg_hnsw->getDataByInternalId(currObj), alg_hnsw->dist_func_param_);
 
@@ -55,6 +58,7 @@ ProbeRes probe_query_rank(HierarchicalNSW<float>* alg_hnsw, const float* query, 
     top_candidates.emplace(curdist, currObj);
 
     float lowerBound = curdist;
+    float best_d = curdist;
     std::vector<EdgeEval> edges;
 
     while (!candidate_set.empty()) {
@@ -70,8 +74,9 @@ ProbeRes probe_query_rank(HierarchicalNSW<float>* alg_hnsw, const float* query, 
         for (int j = 0; j < sz; j++) {
             tableint cand = nbrs[j];
             float d = alg_hnsw->fstdistfunc_(query, alg_hnsw->getDataByInternalId(cand), alg_hnsw->dist_func_param_);
-            bool is_revisit = (visited.find(cand) != visited.end());
+            if (d < best_d) best_d = d;
             
+            bool is_revisit = (visited.find(cand) != visited.end());
             edges.push_back({d, is_revisit});
 
             if (!is_revisit) {
@@ -91,24 +96,18 @@ ProbeRes probe_query_rank(HierarchicalNSW<float>* alg_hnsw, const float* query, 
     });
 
     int N = edges.size();
-    std::vector<float> sum_tot(GAMMAS.size(), 0.0f);
-    std::vector<float> sum_vis(GAMMAS.size(), 0.0f);
-
+    float sum_tot = 0, sum_vis = 0;
     for (int i = 0; i < N; i++) {
         float rank_ratio = (float)(i + 1) / N;
-        
-        for (size_t g = 0; g < GAMMAS.size(); g++) {
-            float w = std::exp(-GAMMAS[g] * rank_ratio);
-            sum_tot[g] += w;
-            if (edges[i].is_revisit) sum_vis[g] += w;
-        }
+        float w = std::exp(-15.0f * rank_ratio);
+        sum_tot += w;
+        if (edges[i].is_revisit) sum_vis += w;
     }
 
     ProbeRes res;
-    res.rv_rank.resize(GAMMAS.size(), 0.0f);
-    for (size_t g = 0; g < GAMMAS.size(); g++) {
-        res.rv_rank[g] = sum_vis[g] / std::max(1e-6f, sum_tot[g]);
-    }
+    // RC = d_mean / b_0
+    res.RC = d_mean / std::max(best_d, 1e-6f);
+    res.rv_rank = sum_vis / std::max(1e-6f, sum_tot);
     
     return res;
 }
@@ -165,7 +164,7 @@ int main(int argc, char** argv) {
     
     auto* alg_hnsw = new HierarchicalNSW<float>(space, index_path, false, full_data.rows());
 
-    int nq = 250;
+    int nq = 2000;
     std::vector<int> q_idx(query_vectors.rows());
     std::iota(q_idx.begin(), q_idx.end(), 0);
     std::srand(42); std::random_shuffle(q_idx.begin(), q_idx.end());
@@ -174,11 +173,13 @@ int main(int argc, char** argv) {
     std::vector<ProbeRes> pr(nq);
     std::vector<int> ef_true(nq);
 
+    Eigen::RowVectorXf global_mean = full_data.colwise().mean();
+
     alg_hnsw->setEf(100); 
     #pragma omp parallel for
     for (int i = 0; i < nq; i++) {
         Eigen::RowVectorXf q = query_vectors.row(q_idx[i]);
-        pr[i] = probe_query_rank(alg_hnsw, q.data(), alg_hnsw->maxlevel_, 100);
+        pr[i] = probe_query(alg_hnsw, q.data(), global_mean, alg_hnsw->maxlevel_, 100);
     }
 
     for (int i = 0; i < nq; i++) {
@@ -186,16 +187,12 @@ int main(int argc, char** argv) {
         ef_true[i] = find_true_ef_for_query(alg_hnsw, q.data(), ground_truth, q_idx[i], 0.95f, 2000).first;
     }
 
-    std::string out_path = "research/sweep_rank_" + dataset + ".csv";
+    std::string out_path = "research/hardness_diagnostic_" + dataset + ".csv";
     std::ofstream out(out_path);
-    out << "query_idx,ef_true";
-    for (float g : GAMMAS) out << ",RV_rank_" << std::fixed << std::setprecision(1) << g;
-    out << "\n";
+    out << "query_idx,RC,RV_rank,ef_true\n";
 
     for (int i = 0; i < nq; i++) {
-        out << q_idx[i] << "," << ef_true[i];
-        for (float rv : pr[i].rv_rank) out << "," << rv;
-        out << "\n";
+        out << q_idx[i] << "," << pr[i].RC << "," << pr[i].rv_rank << "," << ef_true[i] << "\n";
     }
     out.close();
 

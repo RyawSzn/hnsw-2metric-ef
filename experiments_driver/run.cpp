@@ -56,15 +56,16 @@ void online_exp()
     Eigen::setNbThreads(std::max(1u, std::thread::hardware_concurrency() / 4)); // Limit to 1/4 available threads for eigen parallelization in ada-ef offline computation
 
     std::vector<std::tuple<std::string, std::string, float, int>> dataset_metrics = {
-        {"deep-image-96-angular", "cd", 1e-3, 100},
+        // {"deep-image-96-angular", "cd", 1e-3, 100},
         {"glove-100-angular", "cd", 1e-3, 100},
-        {"sift-128-euclidean", "l2", 1e-3, 100},
-        {"msmarco", "cd", 1e-3, 1000},
-        {"cohere", "cd", 1e-3, 1000},
-        {"laion_image", "cd", 1e-3, 1000}, // image to image retrieval
-        {"laion_text", "cd", 1e-3, 1000},  // text to image retrieval
-        {"cluster_mg_uniform_100d", "cd", 1e-3, 1000},
-        {"cluster_mg_zipf_100d", "cd", 1e-3, 1000}};
+        // {"sift-128-euclidean", "l2", 1e-3, 100},
+        // {"msmarco", "cd", 1e-3, 1000},
+        // {"cohere", "cd", 1e-3, 1000},
+        // {"laion_image", "cd", 1e-3, 1000}, // image to image retrieval
+        // {"laion_text", "cd", 1e-3, 1000},  // text to image retrieval
+        // {"cluster_mg_uniform_100d", "cd", 1e-3, 1000},
+        // {"cluster_mg_zipf_100d", "cd", 1e-3, 1000}
+    };
 
     for (const auto [dataset, metric, quantile_step, k] : dataset_metrics)
     {
@@ -241,13 +242,14 @@ void offline_exp()
     std::vector<std::tuple<std::string, std::string, float>> dataset_metrics = {
         {"deep-image-96-angular", "cd", 1e-3},
         {"glove-100-angular", "cd", 1e-3},
-        {"sift-128-euclidean", "l2", 1e-3},
-        {"msmarco", "cd", 1e-3},
-        {"cohere", "cd", 1e-3},
-        {"laion_image", "cd", 1e-3},
-        {"laion_text", "cd", 1e-3},
-        {"cluster_mg_uniform_100d", "cd", 1e-3},
-        {"cluster_mg_zipf_100d", "cd", 1e-3}};
+        // {"sift-128-euclidean", "l2", 1e-3},
+        // {"msmarco", "cd", 1e-3},
+        // {"cohere", "cd", 1e-3},
+        // {"laion_image", "cd", 1e-3},
+        // {"laion_text", "cd", 1e-3},
+        // {"cluster_mg_uniform_100d", "cd", 1e-3},
+        // {"cluster_mg_zipf_100d", "cd", 1e-3}
+    };
 
     for (const auto [dataset, metric, quantile_step] : dataset_metrics)
     {
@@ -1348,14 +1350,14 @@ void per_query_result_exp()
     std::vector<std::tuple<std::string, std::string, float, int>> dataset_metrics = {
         {"deep-image-96-angular", "cd", 1e-3, 100},
         {"glove-100-angular", "cd", 1e-3, 100},
-        {"sift-128-euclidean", "l2", 1e-3, 100},
-        {"msmarco", "cd", 1e-3, 1000},
-        {"cohere", "cd", 1e-3, 1000},
-        {"laion_image", "cd", 1e-3, 1000}, // image to image retrieval
-        {"laion_text", "cd", 1e-3, 1000},  // text to image retrieval
-        {"cluster_mg_uniform_100d", "cd", 1e-3, 1000},
-        {"cluster_mg_zipf_100d", "cd", 1e-3, 1000}
-        };
+        // {"sift-128-euclidean", "l2", 1e-3, 100},
+        // {"msmarco", "cd", 1e-3, 1000},
+        // {"cohere", "cd", 1e-3, 1000},
+        // {"laion_image", "cd", 1e-3, 1000}, // image to image retrieval
+        // {"laion_text", "cd", 1e-3, 1000},  // text to image retrieval
+        // {"cluster_mg_uniform_100d", "cd", 1e-3, 1000},
+        // {"cluster_mg_zipf_100d", "cd", 1e-3, 1000}
+    };
 
     for (const auto [dataset, metric, quantile_step, k] : dataset_metrics)
     {
@@ -1444,11 +1446,11 @@ int main()
     }
     std::cout << "EXPERIMENTS_ROOT: " << root_path << std::endl;
 
-    indexing_exp(); // indexes are precomputed, uncomment to run if needed
+    // indexing_exp(); // indexes are precomputed, uncomment to run if needed
     // functions for computing groundtruth: compute_groundtruth_laion_text2image and compute_and_save_gound_truth
 
     // offline_exp();          // offline computation of estimator, samplings, and ef-adaptor
-    // online_exp();           // onine search experiments
+    online_exp();           // onine search experiments
     // sensitivity_analysis(); // sensitivity analysis for estimator parameters, including k and recall target
 
     // insert_exp(true); // insert experiment with setup

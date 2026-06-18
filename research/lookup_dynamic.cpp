@@ -10,28 +10,50 @@
 #include <algorithm>
 #include <iomanip>
 #include <cstdlib>
+#include <string>
 
 #include "../experiments_driver/util.h"
 #include "../hnswlib/hnswlib.h"
 
 using namespace hnswlib;
 
-int main(int argc, char** argv) {
-    float target_recall = 0.95f;
-    int M_BINS = 10;
-    int m_BINS = 10;
-    std::string dataset = "glove-100-angular";
-    int max_ef = 2000;
-    int sample_size = 0; // 0 means use all queries
+// Simple argument parser
+std::string get_cmd_option(char ** begin, char ** end, const std::string & option, const std::string & default_value = "") {
+    char ** itr = std::find(begin, end, option);
+    if (itr != end && ++itr != end) {
+        return *itr;
+    }
+    return default_value;
+}
 
-    if (argc > 1) target_recall = std::stof(argv[1]);
-    if (argc > 2) M_BINS = std::stoi(argv[2]);
-    if (argc > 3) m_BINS = std::stoi(argv[3]);
-    if (argc > 4) dataset = argv[4];
-    if (argc > 5) max_ef = std::stoi(argv[5]);
-    if (argc > 6) sample_size = std::stoi(argv[6]);
+bool cmd_option_exists(char** begin, char** end, const std::string& option) {
+    return std::find(begin, end, option) != end;
+}
+
+int main(int argc, char** argv) {
+    if (cmd_option_exists(argv, argv + argc, "-h") || cmd_option_exists(argv, argv + argc, "--help")) {
+        std::cerr << "Usage: " << argv[0] << " [options]\n"
+                  << "Options:\n"
+                  << "  --dataset <name>        Dataset name (default: glove-100-angular)\n"
+                  << "  --target_recall <float> Target recall (default: 0.95)\n"
+                  << "  --max_ef <int>          Maximum EF allowed (default: 5000)\n"
+                  << "  --RC_bins <int>         Number of RC bins (default: 20)\n"
+                  << "  --RV_bins <int>         Number of RV bins (default: 20)\n"
+                  << "  --sample_size <int>     Number of queries to sample (default: 2000)\n";
+        return 0;
+    }
+
+    std::string dataset = get_cmd_option(argv, argv + argc, "--dataset", "glove-100-angular");
+    float target_recall = std::stof(get_cmd_option(argv, argv + argc, "--target_recall", "0.95"));
+    int max_ef = std::stoi(get_cmd_option(argv, argv + argc, "--max_ef", "5000"));
+    int RC_BINS = std::stoi(get_cmd_option(argv, argv + argc, "--RC_bins", "20"));
+    int RV_BINS = std::stoi(get_cmd_option(argv, argv + argc, "--RV_bins", "20"));
+    int sample_size = std::stoi(get_cmd_option(argv, argv + argc, "--sample_size", "2000"));
     
-    std::cout << "=== Generating " << M_BINS << "x" << m_BINS << " Adaptive EF Lookup Table (M_RC x m_LID) ===" << std::endl;
+    int ef_probe = 50; 
+    float gamma = 15.0f; // Universally optimal gamma for Rank RV
+
+    std::cout << "=== Generating " << RC_BINS << "x" << RV_BINS << " Adaptive EF Lookup Table (RC x Rank RV) ===" << std::endl;
     std::cout << "Target Recall: " << target_recall << std::endl;
     std::cout << "Max 'ef' Cap:  " << max_ef << std::endl;
     if (sample_size > 0) {
@@ -39,7 +61,7 @@ int main(int argc, char** argv) {
     } else {
         std::cout << "Sample Size:   All queries" << std::endl;
     }
-    std::cout << "Matrix Size:   " << M_BINS << " (M) x " << m_BINS << " (m)" << std::endl;
+    std::cout << "Matrix Size:   " << RC_BINS << " (M) x " << RV_BINS << " (RV)" << std::endl;
     std::cout << "Dataset:       " << dataset << std::endl;
     std::cout << "----------------------------------------------------------------\n" << std::endl;
 
@@ -48,7 +70,7 @@ int main(int argc, char** argv) {
                                                   : std::filesystem::current_path();
     std::string hdf5_path = (root / "data" / (dataset + ".hdf5")).string();
     if (!std::filesystem::exists(hdf5_path)) {
-        hdf5_path = (root / "experiments/data" / (dataset + ".hdf5")).string();
+        hdf5_path = "/home/ryawszn/experiments/data/" + dataset + ".hdf5";
     }
 
     std::cout << "Loading dataset: " << hdf5_path << std::endl;
@@ -57,13 +79,26 @@ int main(int argc, char** argv) {
     hnswdis::MatrixXi ground_truth;
 
     load_hdf5(hdf5_path, query_vectors, full_data, ground_truth);
-    normalize_matrix(full_data);
-    normalize_matrix(query_vectors);
+    
+    // Normalize if dataset is cosine/angular
+    if (dataset.find("angular") != std::string::npos) {
+        normalize_matrix(full_data);
+        normalize_matrix(query_vectors);
+    }
 
     std::string index_path = (root / "index" / (dataset + "-M16-efc-500-parallel.hnsw")).string();
+    if (!std::filesystem::exists(index_path)) {
+        index_path = "/home/ryawszn/experiments/index/" + dataset + "-M16-efc-500-parallel.hnsw";
+    }
+
     std::cout << "Loading HNSW index from " << index_path << "..." << std::endl;
-    L2Space space(full_data.cols());
-    HierarchicalNSW<float>* alg_hnsw = new HierarchicalNSW<float>(&space, index_path, false, full_data.rows());
+    SpaceInterface<float>* space;
+    if (dataset.find("euclidean") != std::string::npos) {
+        space = new L2Space(full_data.cols());
+    } else {
+        space = new InnerProductSpace(full_data.cols());
+    }
+    HierarchicalNSW<float>* alg_hnsw = new HierarchicalNSW<float>(space, index_path, false, full_data.rows());
 
     int total_queries = query_vectors.rows();
     int nq = total_queries;
@@ -71,7 +106,7 @@ int main(int argc, char** argv) {
     std::iota(query_indices.begin(), query_indices.end(), 0);
     
     if (sample_size > 0 && sample_size < total_queries) {
-        std::srand(42); // Seed for reproducible sampling
+        std::srand(42); 
         std::random_shuffle(query_indices.begin(), query_indices.end());
         query_indices.resize(sample_size);
         nq = sample_size;
@@ -80,15 +115,14 @@ int main(int argc, char** argv) {
 
     int L = alg_hnsw->maxlevel_;
     
-    std::vector<float> M_scores(nq, 0.0f);
-    std::vector<float> m_scores(nq, 0.0f);
+    std::vector<float> RC_scores(nq, 0.0f);
+    std::vector<float> RV_scores(nq, 0.0f);
 
     std::cout << "Computing global centroid independently..." << std::endl;
     Eigen::RowVectorXf global_mean = full_data.colwise().mean();
 
-    std::cout << "\nPhase 1: Probing all queries to calculate M_RC and m_LID..." << std::endl;
-    alg_hnsw->setEf(50); // baseline probe ef
-    int K_probe = 32;
+    std::cout << "\nPhase 1: Probing all queries to calculate RC (Contrast) and RV (Rank Topology)..." << std::endl;
+    alg_hnsw->setEf(ef_probe); 
 
     #pragma omp parallel for
     for (int i = 0; i < nq; i++) {
@@ -96,13 +130,12 @@ int main(int argc, char** argv) {
         Eigen::RowVectorXf q = query_vectors.row(original_idx);
         const float* query = q.data();
         
-        float th_mean = q.dot(global_mean);
-        float d_mean = std::max(0.01f, 1.0f - th_mean);
-        
+        float d_mean = alg_hnsw->fstdistfunc_(query, global_mean.data(), alg_hnsw->dist_func_param_);
+        d_mean = std::max(1e-6f, d_mean);
+
         tableint currObj = alg_hnsw->enterpoint_node_;
         float curdist = alg_hnsw->fstdistfunc_(query, alg_hnsw->getDataByInternalId(currObj), alg_hnsw->dist_func_param_);
-        
-        // Fast-forward through upper layers
+
         for (int level = L; level > 0; level--) {
             bool changed = true;
             while (changed) {
@@ -110,129 +143,123 @@ int main(int argc, char** argv) {
                 auto* data = reinterpret_cast<unsigned int*>(alg_hnsw->get_linklist(currObj, level));
                 int sz = alg_hnsw->getListCount(reinterpret_cast<hnswlib::linklistsizeint*>(data));
                 auto* nbrs = reinterpret_cast<tableint*>(data + 1);
-                
+
                 for (int j = 0; j < sz; j++) {
                     tableint cand = nbrs[j];
                     float d = alg_hnsw->fstdistfunc_(query, alg_hnsw->getDataByInternalId(cand), alg_hnsw->dist_func_param_);
-                    if (d < curdist) {
-                        curdist = d;
-                        currObj = cand;
-                        changed = true;
-                    }
+                    if (d < curdist) { curdist = d; currObj = cand; changed = true; }
                 }
             }
         }
-        
-        // Base layer (0) Probe
+
         std::priority_queue<std::pair<float, tableint>> top_candidates;
         std::priority_queue<std::pair<float, tableint>, std::vector<std::pair<float, tableint>>, std::greater<std::pair<float, tableint>>> candidate_set;
         std::unordered_set<tableint> visited;
-        
+
         visited.insert(currObj);
         candidate_set.emplace(curdist, currObj);
         top_candidates.emplace(curdist, currObj);
-        
-        std::vector<float> base_dists;
-        base_dists.push_back(curdist);
+
         float lowerBound = curdist;
-        
+        float best_d = curdist;
+        std::vector<std::pair<float, bool>> evaluated_edges;
+
         while (!candidate_set.empty()) {
             auto current_node_pair = candidate_set.top();
-            if (current_node_pair.first > lowerBound && top_candidates.size() == 50) break;
+            if (current_node_pair.first > lowerBound && top_candidates.size() == ef_probe) break;
             candidate_set.pop();
             tableint cur_node = current_node_pair.second;
-            
+
             auto* data = reinterpret_cast<int*>(alg_hnsw->get_linklist0(cur_node));
             int sz = alg_hnsw->getListCount(reinterpret_cast<hnswlib::linklistsizeint*>(data));
             auto* nbrs = reinterpret_cast<tableint*>(data + 1);
-            
+
             for (int j = 0; j < sz; j++) {
                 tableint cand = nbrs[j];
-                if (visited.find(cand) == visited.end()) {
+                float d = alg_hnsw->fstdistfunc_(query, alg_hnsw->getDataByInternalId(cand), alg_hnsw->dist_func_param_);
+                if (d < best_d) best_d = d;
+
+                bool is_revisit = (visited.find(cand) != visited.end());
+                evaluated_edges.push_back({d, is_revisit});
+
+                if (!is_revisit) {
                     visited.insert(cand);
-                    float d = alg_hnsw->fstdistfunc_(query, alg_hnsw->getDataByInternalId(cand), alg_hnsw->dist_func_param_);
-                    base_dists.push_back(d);
-                    
-                    if (top_candidates.size() < 50 || lowerBound > d) {
+                    if (top_candidates.size() < ef_probe || lowerBound > d) {
                         candidate_set.emplace(d, cand);
                         top_candidates.emplace(d, cand);
-                        if (top_candidates.size() > 50) top_candidates.pop();
+                        if (top_candidates.size() > ef_probe) top_candidates.pop();
                         lowerBound = top_candidates.top().first;
                     }
                 }
             }
         }
-        
-        std::sort(base_dists.begin(), base_dists.end());
-        float b_0 = base_dists[0];
-        
-        M_scores[i] = b_0 / d_mean;
-        
-        int K = std::min(K_probe, (int)base_dists.size());
-        float m_q = 0;
-        if (K > 1) {
-            float d_K = base_dists[K-1] + 1e-6f;
-            float sum_log = 0;
-            for (int k = 0; k < K - 1; k++) {
-                float d_i = base_dists[k] + 1e-6f;
-                sum_log += std::log(d_K / d_i);
-            }
-            if (sum_log > 0) m_q = (K - 1) / sum_log;
+
+        RC_scores[i] = d_mean / std::max(best_d, 1e-6f);
+
+        std::sort(evaluated_edges.begin(), evaluated_edges.end(), 
+            [](const std::pair<float, bool>& a, const std::pair<float, bool>& b) { return a.first < b.first; });
+
+        int num_edges = evaluated_edges.size();
+        float sum_r_tot = 0, sum_r_vis = 0;
+        for (int e = 0; e < num_edges; e++) {
+            float rank_ratio = (float)(e + 1) / num_edges;
+            float w = std::exp(-gamma * rank_ratio);
+            sum_r_tot += w;
+            if (evaluated_edges[e].second) sum_r_vis += w;
         }
-        m_scores[i] = m_q;
+        
+        RV_scores[i] = sum_r_vis / std::max(1e-6f, sum_r_tot);
     }
 
-    std::cout << "Phase 2: Calculating Quantile Boundaries for " << M_BINS << "x" << m_BINS << " grid..." << std::endl;
-    std::vector<float> sorted_M = M_scores;
-    std::vector<float> sorted_m = m_scores;
+    std::cout << "Phase 2: Calculating Quantile Boundaries for " << RC_BINS << "x" << RV_BINS << " grid..." << std::endl;
+    std::vector<float> sorted_M = RC_scores;
+    std::vector<float> sorted_RV = RV_scores;
     std::sort(sorted_M.begin(), sorted_M.end());
-    std::sort(sorted_m.begin(), sorted_m.end());
+    std::sort(sorted_RV.begin(), sorted_RV.end());
 
-    std::vector<float> M_bounds(M_BINS + 1);
-    std::vector<float> m_bounds(m_BINS + 1);
-    for(int i=0; i<=M_BINS; i++) {
-        int idx = std::min((int)(nq - 1), (int)(i * nq / (float)M_BINS));
-        M_bounds[i] = sorted_M[idx];
+    std::vector<float> RC_bounds(RC_BINS + 1);
+    std::vector<float> RV_bounds(RV_BINS + 1);
+    for(int i=0; i<=RC_BINS; i++) {
+        int idx = std::min((int)(nq - 1), (int)(i * nq / (float)RC_BINS));
+        RC_bounds[i] = sorted_M[idx];
     }
-    for(int i=0; i<=m_BINS; i++) {
-        int idx = std::min((int)(nq - 1), (int)(i * nq / (float)m_BINS));
-        m_bounds[i] = sorted_m[idx];
+    for(int j=0; j<=RV_BINS; j++) {
+        int idx = std::min((int)(nq - 1), (int)(j * nq / (float)RV_BINS));
+        RV_bounds[j] = sorted_RV[idx];
     }
-    M_bounds[M_BINS] = std::numeric_limits<float>::max();
-    m_bounds[m_BINS] = std::numeric_limits<float>::max();
 
-    std::vector<std::vector<std::vector<int>>> buckets(M_BINS, std::vector<std::vector<int>>(m_BINS));
+    std::vector<std::vector<std::vector<int>>> buckets(RC_BINS, std::vector<std::vector<int>>(RV_BINS));
     for (int i = 0; i < nq; i++) {
-        int bM = 0;
-        while(bM < M_BINS - 1 && M_scores[i] > M_bounds[bM+1]) bM++;
-        int bm = 0;
-        while(bm < m_BINS - 1 && m_scores[i] > m_bounds[bm+1]) bm++;
-        buckets[bM][bm].push_back(i);
+        int bRC = 0;
+        while(bRC < RC_BINS - 1 && RC_scores[i] > RC_bounds[bRC+1]) bRC++;
+        int bRV = 0;
+        while(bRV < RV_BINS - 1 && RV_scores[i] > RV_bounds[bRV+1]) bRV++;
+        buckets[bRC][bRV].push_back(query_indices[i]);
     }
 
     std::cout << "Phase 3: Stepping ef by +50 to hit Target Recall (" << target_recall << ") for each bucket...\n" << std::endl;
 
-    std::vector<std::vector<std::pair<int, float>>> lookup_table(M_BINS, std::vector<std::pair<int, float>>(m_BINS, {0, 0.0f}));
+    std::vector<std::vector<std::pair<int, float>>> lookup_table(RC_BINS, std::vector<std::pair<int, float>>(RV_BINS, {0, 0.0f}));
 
     int col_width = 13;
-    std::string separator(6 + m_BINS * (col_width + 1), '-');
+    std::string separator(6 + RV_BINS * (col_width + 1), '-');
     
     std::cout << separator << std::endl;
-    std::cout << "             Adaptive EF Lookup Table (" << M_BINS << "x" << m_BINS << ")" << std::endl;
+    std::cout << "             Adaptive EF Lookup Table (" << RC_BINS << "x" << RV_BINS << ")" << std::endl;
     std::cout << separator << std::endl;
     
     std::cout << "     |";
-    for(int j=0; j<m_BINS; j++) std::cout << "      m" << std::setw(2) << std::left << (j+1) << "    |";
+    for(int j=0; j<RV_BINS; j++) std::cout << "     RV" << std::setw(2) << std::left << (j+1) << "   |";
     std::cout << "\n" << separator << std::endl;
 
-    char filename[256];
-    snprintf(filename, sizeof(filename), "research/lookup_table_%dx%d.csv", M_BINS, m_BINS);
+    char filename[512];
+    snprintf(filename, sizeof(filename), "/home/ryawszn/experiments/2metric/lookup/lookup_table_%s_%dx%d.csv", dataset.c_str(), RC_BINS, RV_BINS);
     std::ofstream out(filename);
-    out << "M_bin,m_bin,ef,actual_recall\n";
+    out << "RC_bin,RV_bin,ef,actual_recall\n";
 
-    for (int i = 0; i < M_BINS; i++) {
-        std::cout << " M" << std::setw(2) << std::left << (i+1) << " |";
-        for (int j = 0; j < m_BINS; j++) {
+    for (int i = 0; i < RC_BINS; i++) {
+        std::cout << " RC" << std::setw(2) << std::left << (i+1) << " |";
+        for (int j = 0; j < RV_BINS; j++) {
             auto& query_list = buckets[i][j];
             if (query_list.empty()) {
                 std::cout << "    ---      |";
@@ -246,30 +273,39 @@ int main(int argc, char** argv) {
                 alg_hnsw->setEf(ef);
                 int total_hits = 0;
 
-                for (int i_idx : query_list) {
-                    int original_idx = query_indices[i_idx];
-                    auto res = alg_hnsw->searchKnn(query_vectors.row(original_idx).data(), 10);
-                    while (!res.empty()) {
-                        tableint id = res.top().second;
-                        res.pop();
-                        for (int c = 0; c < 10; c++) {
-                            if (ground_truth(original_idx, c) == id) {
-                                total_hits++;
-                                break;
-                            }
+                for (int q_idx : query_list) {
+                    const float* query = query_vectors.row(q_idx).data();
+                    auto pq = alg_hnsw->searchKnn(query, ground_truth.cols());
+                    
+                    std::vector<size_t> res(pq.size());
+                    int count = pq.size();
+                    while (!pq.empty()) {
+                        res[--count] = pq.top().second;
+                        pq.pop();
+                    }
+
+                    int hits = 0;
+                    for (size_t r : res) {
+                        for (int k = 0; k < ground_truth.cols(); k++) {
+                            if (r == ground_truth(q_idx, k)) { hits++; break; }
                         }
                     }
+                    total_hits += hits;
                 }
 
-                float avg_recall = (float)total_hits / (query_list.size() * 10);
-                best_ef = ef;
-                best_recall = avg_recall;
+                float avg_recall = (float)total_hits / (query_list.size() * ground_truth.cols());
+                if (avg_recall > best_recall) {
+                    best_recall = avg_recall;
+                    best_ef = ef;
+                }
 
                 if (avg_recall >= target_recall) break; 
             }
 
             lookup_table[i][j] = {best_ef, best_recall};
-            out << (i+1) << "," << (j+1) << "," << best_ef << "," << best_recall << "\n";
+            out << "\"(" << RC_bounds[i] << "," << RC_bounds[i+1] << "]\",\"(" 
+                << RV_bounds[j] << "," << RV_bounds[j+1] << "]\",\"" 
+                << best_ef << "\",\"" << best_recall << "\"\n";
             out.flush();
             
             char buf[32];
@@ -284,5 +320,6 @@ int main(int argc, char** argv) {
     std::cout << "Lookup table saved to " << filename << std::endl;
 
     delete alg_hnsw;
+    delete space;
     return 0;
 }
