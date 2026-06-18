@@ -15,18 +15,14 @@
 
 using namespace hnswlib;
 
-const std::vector<float> GAMMAS = {2.0f, 5.0f, 8.0f, 10.0f, 12.0f, 15.0f, 20.0f, 30.0f};
-
-struct EdgeEval {
-    float dist;
-    bool is_revisit;
-};
-
 struct ProbeRes {
-    std::vector<float> rv_rank;
+    float rv_gauss = 0.0f;
+    float rv_hub_b05 = 0.0f;
+    float rv_hub_b10 = 0.0f;
+    float rv_hub_b20 = 0.0f;
 };
 
-ProbeRes probe_query_rank(HierarchicalNSW<float>* alg_hnsw, const float* query, int L, int ef_probe_cap) {
+ProbeRes probe_query_hub(HierarchicalNSW<float>* alg_hnsw, const float* query, int L, int ef_probe_cap, const std::vector<int>& in_degree) {
     tableint currObj = alg_hnsw->enterpoint_node_;
     float curdist = alg_hnsw->fstdistfunc_(query, alg_hnsw->getDataByInternalId(currObj), alg_hnsw->dist_func_param_);
 
@@ -55,7 +51,11 @@ ProbeRes probe_query_rank(HierarchicalNSW<float>* alg_hnsw, const float* query, 
     top_candidates.emplace(curdist, currObj);
 
     float lowerBound = curdist;
-    std::vector<EdgeEval> edges;
+    
+    float sum_g_tot = 0, sum_g_vis = 0;
+    float sum_h05_tot = 0, sum_h05_vis = 0;
+    float sum_h10_tot = 0, sum_h10_vis = 0;
+    float sum_h20_tot = 0, sum_h20_vis = 0;
 
     while (!candidate_set.empty()) {
         auto current_node_pair = candidate_set.top();
@@ -72,7 +72,26 @@ ProbeRes probe_query_rank(HierarchicalNSW<float>* alg_hnsw, const float* query, 
             float d = alg_hnsw->fstdistfunc_(query, alg_hnsw->getDataByInternalId(cand), alg_hnsw->dist_func_param_);
             bool is_revisit = (visited.find(cand) != visited.end());
             
-            edges.push_back({d, is_revisit});
+            float w_gauss = std::exp(-5.0f * d);
+            
+            // Avoid division by zero if a node has 0 in-degree (shouldn't happen on layer 0, but safe)
+            float hc = std::max(1.0f, (float)in_degree[cand]);
+            
+            float w_h05 = w_gauss / std::pow(hc, 0.5f);
+            float w_h10 = w_gauss / std::pow(hc, 1.0f);
+            float w_h20 = w_gauss / std::pow(hc, 2.0f);
+
+            sum_g_tot += w_gauss;
+            sum_h05_tot += w_h05;
+            sum_h10_tot += w_h10;
+            sum_h20_tot += w_h20;
+
+            if (is_revisit) {
+                sum_g_vis += w_gauss;
+                sum_h05_vis += w_h05;
+                sum_h10_vis += w_h10;
+                sum_h20_vis += w_h20;
+            }
 
             if (!is_revisit) {
                 visited.insert(cand);
@@ -86,30 +105,11 @@ ProbeRes probe_query_rank(HierarchicalNSW<float>* alg_hnsw, const float* query, 
         }
     }
 
-    std::sort(edges.begin(), edges.end(), [](const EdgeEval& a, const EdgeEval& b) {
-        return a.dist < b.dist;
-    });
-
-    int N = edges.size();
-    std::vector<float> sum_tot(GAMMAS.size(), 0.0f);
-    std::vector<float> sum_vis(GAMMAS.size(), 0.0f);
-
-    for (int i = 0; i < N; i++) {
-        float rank_ratio = (float)(i + 1) / N;
-        
-        for (size_t g = 0; g < GAMMAS.size(); g++) {
-            float w = std::exp(-GAMMAS[g] * rank_ratio);
-            sum_tot[g] += w;
-            if (edges[i].is_revisit) sum_vis[g] += w;
-        }
-    }
-
     ProbeRes res;
-    res.rv_rank.resize(GAMMAS.size(), 0.0f);
-    for (size_t g = 0; g < GAMMAS.size(); g++) {
-        res.rv_rank[g] = sum_vis[g] / std::max(1e-6f, sum_tot[g]);
-    }
-    
+    res.rv_gauss = sum_g_vis / std::max(1e-6f, sum_g_tot);
+    res.rv_hub_b05 = sum_h05_vis / std::max(1e-6f, sum_h05_tot);
+    res.rv_hub_b10 = sum_h10_vis / std::max(1e-6f, sum_h10_tot);
+    res.rv_hub_b20 = sum_h20_vis / std::max(1e-6f, sum_h20_tot);
     return res;
 }
 
@@ -165,7 +165,19 @@ int main(int argc, char** argv) {
     
     auto* alg_hnsw = new HierarchicalNSW<float>(space, index_path, false, full_data.rows());
 
-    int nq = 250;
+    // Precompute hubness (in-degree on layer 0)
+    std::cout << "Precomputing in-degree hubness for " << alg_hnsw->cur_element_count << " nodes...\n";
+    std::vector<int> in_degree(alg_hnsw->max_elements_, 0);
+    for (tableint i = 0; i < alg_hnsw->cur_element_count; i++) {
+        auto* data = reinterpret_cast<int*>(alg_hnsw->get_linklist0(i));
+        int sz = alg_hnsw->getListCount(reinterpret_cast<hnswlib::linklistsizeint*>(data));
+        auto* nbrs = reinterpret_cast<tableint*>(data + 1);
+        for (int j = 0; j < sz; j++) {
+            in_degree[nbrs[j]]++;
+        }
+    }
+
+    int nq = 2000;
     std::vector<int> q_idx(query_vectors.rows());
     std::iota(q_idx.begin(), q_idx.end(), 0);
     std::srand(42); std::random_shuffle(q_idx.begin(), q_idx.end());
@@ -178,24 +190,24 @@ int main(int argc, char** argv) {
     #pragma omp parallel for
     for (int i = 0; i < nq; i++) {
         Eigen::RowVectorXf q = query_vectors.row(q_idx[i]);
-        pr[i] = probe_query_rank(alg_hnsw, q.data(), alg_hnsw->maxlevel_, 100);
+        pr[i] = probe_query_hub(alg_hnsw, q.data(), alg_hnsw->maxlevel_, 100, in_degree);
     }
 
     for (int i = 0; i < nq; i++) {
         Eigen::RowVectorXf q = query_vectors.row(q_idx[i]);
-        ef_true[i] = find_true_ef_for_query(alg_hnsw, q.data(), ground_truth, q_idx[i], 0.95f, 2000).first;
+        ef_true[i] = find_true_ef_for_query(alg_hnsw, q.data(), ground_truth, q_idx[i], 0.95f, 5000).first;
     }
 
-    std::string out_path = "research/sweep_rank_" + dataset + ".csv";
+    std::string out_path = "research/hubness_weight_" + dataset + ".csv";
     std::ofstream out(out_path);
-    out << "query_idx,ef_true";
-    for (float g : GAMMAS) out << ",RV_rank_" << std::fixed << std::setprecision(1) << g;
-    out << "\n";
+    out << "query_idx,ef_true,RV_gauss,RV_hub_05,RV_hub_10,RV_hub_20\n";
 
     for (int i = 0; i < nq; i++) {
-        out << q_idx[i] << "," << ef_true[i];
-        for (float rv : pr[i].rv_rank) out << "," << rv;
-        out << "\n";
+        out << q_idx[i] << "," << ef_true[i] << "," 
+            << pr[i].rv_gauss << "," 
+            << pr[i].rv_hub_b05 << "," 
+            << pr[i].rv_hub_b10 << "," 
+            << pr[i].rv_hub_b20 << "\n";
     }
     out.close();
 

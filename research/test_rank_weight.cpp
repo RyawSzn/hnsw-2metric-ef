@@ -15,15 +15,15 @@
 
 using namespace hnswlib;
 
-const std::vector<float> GAMMAS = {2.0f, 5.0f, 8.0f, 10.0f, 12.0f, 15.0f, 20.0f, 30.0f};
-
 struct EdgeEval {
     float dist;
     bool is_revisit;
 };
 
 struct ProbeRes {
-    std::vector<float> rv_rank;
+    float rv_unw = 0.0f;
+    float rv_rank_5 = 0.0f;
+    float rv_rank_10 = 0.0f;
 };
 
 ProbeRes probe_query_rank(HierarchicalNSW<float>* alg_hnsw, const float* query, int L, int ef_probe_cap) {
@@ -86,29 +86,36 @@ ProbeRes probe_query_rank(HierarchicalNSW<float>* alg_hnsw, const float* query, 
         }
     }
 
+    // Sort edges to assign ranks
     std::sort(edges.begin(), edges.end(), [](const EdgeEval& a, const EdgeEval& b) {
         return a.dist < b.dist;
     });
 
     int N = edges.size();
-    std::vector<float> sum_tot(GAMMAS.size(), 0.0f);
-    std::vector<float> sum_vis(GAMMAS.size(), 0.0f);
+    float sum_unw_vis = 0, sum_unw_tot = N;
+    float sum_r5_vis = 0, sum_r5_tot = 0;
+    float sum_r10_vis = 0, sum_r10_tot = 0;
 
     for (int i = 0; i < N; i++) {
-        float rank_ratio = (float)(i + 1) / N;
+        float rank_ratio = (float)(i + 1) / N; // (0, 1]
         
-        for (size_t g = 0; g < GAMMAS.size(); g++) {
-            float w = std::exp(-GAMMAS[g] * rank_ratio);
-            sum_tot[g] += w;
-            if (edges[i].is_revisit) sum_vis[g] += w;
+        float w5 = std::exp(-5.0f * rank_ratio);
+        float w10 = std::exp(-10.0f * rank_ratio);
+        
+        sum_r5_tot += w5;
+        sum_r10_tot += w10;
+        
+        if (edges[i].is_revisit) {
+            sum_unw_vis += 1.0f;
+            sum_r5_vis += w5;
+            sum_r10_vis += w10;
         }
     }
 
     ProbeRes res;
-    res.rv_rank.resize(GAMMAS.size(), 0.0f);
-    for (size_t g = 0; g < GAMMAS.size(); g++) {
-        res.rv_rank[g] = sum_vis[g] / std::max(1e-6f, sum_tot[g]);
-    }
+    res.rv_unw = sum_unw_vis / std::max(1.0f, sum_unw_tot);
+    res.rv_rank_5 = sum_r5_vis / std::max(1e-6f, sum_r5_tot);
+    res.rv_rank_10 = sum_r10_vis / std::max(1e-6f, sum_r10_tot);
     
     return res;
 }
@@ -186,16 +193,12 @@ int main(int argc, char** argv) {
         ef_true[i] = find_true_ef_for_query(alg_hnsw, q.data(), ground_truth, q_idx[i], 0.95f, 2000).first;
     }
 
-    std::string out_path = "research/sweep_rank_" + dataset + ".csv";
+    std::string out_path = "research/rank_weight_" + dataset + ".csv";
     std::ofstream out(out_path);
-    out << "query_idx,ef_true";
-    for (float g : GAMMAS) out << ",RV_rank_" << std::fixed << std::setprecision(1) << g;
-    out << "\n";
+    out << "query_idx,ef_true,RV_unw,RV_rank_5,RV_rank_10\n";
 
     for (int i = 0; i < nq; i++) {
-        out << q_idx[i] << "," << ef_true[i];
-        for (float rv : pr[i].rv_rank) out << "," << rv;
-        out << "\n";
+        out << q_idx[i] << "," << ef_true[i] << "," << pr[i].rv_unw << "," << pr[i].rv_rank_5 << "," << pr[i].rv_rank_10 << "\n";
     }
     out.close();
 

@@ -15,18 +15,17 @@
 
 using namespace hnswlib;
 
-const std::vector<float> GAMMAS = {2.0f, 5.0f, 8.0f, 10.0f, 12.0f, 15.0f, 20.0f, 30.0f};
-
 struct EdgeEval {
     float dist;
     bool is_revisit;
 };
 
 struct ProbeRes {
-    std::vector<float> rv_rank;
+    float rv_rank;
+    float m_lid;
 };
 
-ProbeRes probe_query_rank(HierarchicalNSW<float>* alg_hnsw, const float* query, int L, int ef_probe_cap) {
+ProbeRes probe_query_final(HierarchicalNSW<float>* alg_hnsw, const float* query, int L, int ef_probe_cap) {
     tableint currObj = alg_hnsw->enterpoint_node_;
     float curdist = alg_hnsw->fstdistfunc_(query, alg_hnsw->getDataByInternalId(currObj), alg_hnsw->dist_func_param_);
 
@@ -56,6 +55,8 @@ ProbeRes probe_query_rank(HierarchicalNSW<float>* alg_hnsw, const float* query, 
 
     float lowerBound = curdist;
     std::vector<EdgeEval> edges;
+    std::vector<float> base_dists;
+    base_dists.push_back(curdist);
 
     while (!candidate_set.empty()) {
         auto current_node_pair = candidate_set.top();
@@ -76,6 +77,7 @@ ProbeRes probe_query_rank(HierarchicalNSW<float>* alg_hnsw, const float* query, 
 
             if (!is_revisit) {
                 visited.insert(cand);
+                base_dists.push_back(d);
                 if (top_candidates.size() < ef_probe_cap || lowerBound > d) {
                     candidate_set.emplace(d, cand);
                     top_candidates.emplace(d, cand);
@@ -86,30 +88,37 @@ ProbeRes probe_query_rank(HierarchicalNSW<float>* alg_hnsw, const float* query, 
         }
     }
 
+    // Compute Rank RV
     std::sort(edges.begin(), edges.end(), [](const EdgeEval& a, const EdgeEval& b) {
         return a.dist < b.dist;
     });
 
     int N = edges.size();
-    std::vector<float> sum_tot(GAMMAS.size(), 0.0f);
-    std::vector<float> sum_vis(GAMMAS.size(), 0.0f);
-
+    float sum_r_tot = 0, sum_r_vis = 0;
     for (int i = 0; i < N; i++) {
         float rank_ratio = (float)(i + 1) / N;
-        
-        for (size_t g = 0; g < GAMMAS.size(); g++) {
-            float w = std::exp(-GAMMAS[g] * rank_ratio);
-            sum_tot[g] += w;
-            if (edges[i].is_revisit) sum_vis[g] += w;
+        float w_r = std::exp(-10.0f * rank_ratio);
+        sum_r_tot += w_r;
+        if (edges[i].is_revisit) sum_r_vis += w_r;
+    }
+
+    // Compute LID (m)
+    std::sort(base_dists.begin(), base_dists.end());
+    int K = std::min(32, (int)base_dists.size());
+    float m_q = 0.0f;
+    if (K > 1) {
+        float d_K = base_dists[K - 1] + 1e-6f;
+        float sum_log = 0.0f;
+        for (int k = 0; k < K - 1; k++) {
+            float d_i = base_dists[k] + 1e-6f;
+            sum_log += std::log(d_K / d_i);
         }
+        if (sum_log > 0) m_q = (K - 1) / sum_log;
     }
 
     ProbeRes res;
-    res.rv_rank.resize(GAMMAS.size(), 0.0f);
-    for (size_t g = 0; g < GAMMAS.size(); g++) {
-        res.rv_rank[g] = sum_vis[g] / std::max(1e-6f, sum_tot[g]);
-    }
-    
+    res.rv_rank = sum_r_vis / std::max(1e-6f, sum_r_tot);
+    res.m_lid = m_q;
     return res;
 }
 
@@ -178,7 +187,7 @@ int main(int argc, char** argv) {
     #pragma omp parallel for
     for (int i = 0; i < nq; i++) {
         Eigen::RowVectorXf q = query_vectors.row(q_idx[i]);
-        pr[i] = probe_query_rank(alg_hnsw, q.data(), alg_hnsw->maxlevel_, 100);
+        pr[i] = probe_query_final(alg_hnsw, q.data(), alg_hnsw->maxlevel_, 100);
     }
 
     for (int i = 0; i < nq; i++) {
@@ -186,16 +195,14 @@ int main(int argc, char** argv) {
         ef_true[i] = find_true_ef_for_query(alg_hnsw, q.data(), ground_truth, q_idx[i], 0.95f, 2000).first;
     }
 
-    std::string out_path = "research/sweep_rank_" + dataset + ".csv";
+    std::string out_path = "research/final_rank_" + dataset + ".csv";
     std::ofstream out(out_path);
-    out << "query_idx,ef_true";
-    for (float g : GAMMAS) out << ",RV_rank_" << std::fixed << std::setprecision(1) << g;
-    out << "\n";
+    out << "query_idx,ef_true,RV_rank,m_LID\n";
 
     for (int i = 0; i < nq; i++) {
-        out << q_idx[i] << "," << ef_true[i];
-        for (float rv : pr[i].rv_rank) out << "," << rv;
-        out << "\n";
+        out << q_idx[i] << "," << ef_true[i] << "," 
+            << pr[i].rv_rank << "," 
+            << pr[i].m_lid << "\n";
     }
     out.close();
 

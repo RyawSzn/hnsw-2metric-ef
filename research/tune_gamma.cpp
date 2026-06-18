@@ -15,18 +15,16 @@
 
 using namespace hnswlib;
 
-const std::vector<float> GAMMAS = {2.0f, 5.0f, 8.0f, 10.0f, 12.0f, 15.0f, 20.0f, 30.0f};
+const std::vector<float> GAMMAS = {0.1f, 0.5f, 1.0f, 2.0f, 5.0f, 10.0f, 20.0f, 50.0f, 100.0f};
 
-struct EdgeEval {
-    float dist;
-    bool is_revisit;
+struct GammaProbeResult {
+    std::vector<float> RV_scores;
 };
 
-struct ProbeRes {
-    std::vector<float> rv_rank;
-};
+GammaProbeResult probe_query_gammas(HierarchicalNSW<float>* alg_hnsw, const float* query, int L, int ef_probe_cap) {
+    GammaProbeResult res;
+    res.RV_scores.resize(GAMMAS.size(), 0.0f);
 
-ProbeRes probe_query_rank(HierarchicalNSW<float>* alg_hnsw, const float* query, int L, int ef_probe_cap) {
     tableint currObj = alg_hnsw->enterpoint_node_;
     float curdist = alg_hnsw->fstdistfunc_(query, alg_hnsw->getDataByInternalId(currObj), alg_hnsw->dist_func_param_);
 
@@ -55,7 +53,8 @@ ProbeRes probe_query_rank(HierarchicalNSW<float>* alg_hnsw, const float* query, 
     top_candidates.emplace(curdist, currObj);
 
     float lowerBound = curdist;
-    std::vector<EdgeEval> edges;
+    std::vector<float> sum_gau_tot(GAMMAS.size(), 0.0f);
+    std::vector<float> sum_gau_vis(GAMMAS.size(), 0.0f);
 
     while (!candidate_set.empty()) {
         auto current_node_pair = candidate_set.top();
@@ -72,7 +71,11 @@ ProbeRes probe_query_rank(HierarchicalNSW<float>* alg_hnsw, const float* query, 
             float d = alg_hnsw->fstdistfunc_(query, alg_hnsw->getDataByInternalId(cand), alg_hnsw->dist_func_param_);
             bool is_revisit = (visited.find(cand) != visited.end());
             
-            edges.push_back({d, is_revisit});
+            for (size_t g = 0; g < GAMMAS.size(); g++) {
+                float w_gau = std::exp(-GAMMAS[g] * d);
+                sum_gau_tot[g] += w_gau;
+                if (is_revisit) sum_gau_vis[g] += w_gau;
+            }
 
             if (!is_revisit) {
                 visited.insert(cand);
@@ -86,30 +89,9 @@ ProbeRes probe_query_rank(HierarchicalNSW<float>* alg_hnsw, const float* query, 
         }
     }
 
-    std::sort(edges.begin(), edges.end(), [](const EdgeEval& a, const EdgeEval& b) {
-        return a.dist < b.dist;
-    });
-
-    int N = edges.size();
-    std::vector<float> sum_tot(GAMMAS.size(), 0.0f);
-    std::vector<float> sum_vis(GAMMAS.size(), 0.0f);
-
-    for (int i = 0; i < N; i++) {
-        float rank_ratio = (float)(i + 1) / N;
-        
-        for (size_t g = 0; g < GAMMAS.size(); g++) {
-            float w = std::exp(-GAMMAS[g] * rank_ratio);
-            sum_tot[g] += w;
-            if (edges[i].is_revisit) sum_vis[g] += w;
-        }
-    }
-
-    ProbeRes res;
-    res.rv_rank.resize(GAMMAS.size(), 0.0f);
     for (size_t g = 0; g < GAMMAS.size(); g++) {
-        res.rv_rank[g] = sum_vis[g] / std::max(1e-6f, sum_tot[g]);
+        res.RV_scores[g] = sum_gau_vis[g] / std::max(1e-6f, sum_gau_tot[g]);
     }
-    
     return res;
 }
 
@@ -145,61 +127,50 @@ int main(int argc, char** argv) {
     hnswdis::MatrixXf full_data, query_vectors;
     hnswdis::MatrixXi ground_truth;
     load_hdf5(hdf5_path, query_vectors, full_data, ground_truth);
-    
-    if (dataset.find("angular") != std::string::npos) {
-        normalize_matrix(full_data); 
-        normalize_matrix(query_vectors);
-    }
+    normalize_matrix(full_data); normalize_matrix(query_vectors);
 
     std::string index_path = (root / "index" / (dataset + "-M16-efc-500-parallel.hnsw")).string();
     if (!std::filesystem::exists(index_path)) {
         index_path = "/home/ryawszn/experiments/index/" + dataset + "-M16-efc-500-parallel.hnsw";
     }
 
-    SpaceInterface<float>* space;
-    if (dataset.find("euclidean") != std::string::npos) {
-        space = new L2Space(full_data.cols());
-    } else {
-        space = new InnerProductSpace(full_data.cols());
-    }
-    
-    auto* alg_hnsw = new HierarchicalNSW<float>(space, index_path, false, full_data.rows());
+    L2Space space(full_data.cols());
+    auto* alg_hnsw = new HierarchicalNSW<float>(&space, index_path, false, full_data.rows());
 
-    int nq = 250;
+    int nq = 2000;
     std::vector<int> q_idx(query_vectors.rows());
     std::iota(q_idx.begin(), q_idx.end(), 0);
     std::srand(42); std::random_shuffle(q_idx.begin(), q_idx.end());
     q_idx.resize(nq);
 
-    std::vector<ProbeRes> pr(nq);
+    std::vector<GammaProbeResult> pr(nq);
     std::vector<int> ef_true(nq);
 
     alg_hnsw->setEf(100); 
     #pragma omp parallel for
     for (int i = 0; i < nq; i++) {
         Eigen::RowVectorXf q = query_vectors.row(q_idx[i]);
-        pr[i] = probe_query_rank(alg_hnsw, q.data(), alg_hnsw->maxlevel_, 100);
+        pr[i] = probe_query_gammas(alg_hnsw, q.data(), alg_hnsw->maxlevel_, 100);
     }
 
     for (int i = 0; i < nq; i++) {
         Eigen::RowVectorXf q = query_vectors.row(q_idx[i]);
-        ef_true[i] = find_true_ef_for_query(alg_hnsw, q.data(), ground_truth, q_idx[i], 0.95f, 2000).first;
+        ef_true[i] = find_true_ef_for_query(alg_hnsw, q.data(), ground_truth, q_idx[i], 0.95f, 5000).first;
     }
 
-    std::string out_path = "research/sweep_rank_" + dataset + ".csv";
+    std::string out_path = "research/gamma_sweep_" + dataset + ".csv";
     std::ofstream out(out_path);
     out << "query_idx,ef_true";
-    for (float g : GAMMAS) out << ",RV_rank_" << std::fixed << std::setprecision(1) << g;
+    for (float g : GAMMAS) out << ",RV_gamma_" << std::fixed << std::setprecision(1) << g;
     out << "\n";
 
     for (int i = 0; i < nq; i++) {
         out << q_idx[i] << "," << ef_true[i];
-        for (float rv : pr[i].rv_rank) out << "," << rv;
+        for (float rv : pr[i].RV_scores) out << "," << rv;
         out << "\n";
     }
     out.close();
 
     delete alg_hnsw;
-    delete space;
     return 0;
 }

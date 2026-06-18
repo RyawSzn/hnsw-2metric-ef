@@ -58,6 +58,7 @@ void online_exp()
     std::vector<std::tuple<std::string, std::string, float, int>> dataset_metrics = {
         {"deep-image-96-angular", "cd", 1e-3, 100},
         {"glove-100-angular", "cd", 1e-3, 100},
+        {"sift-128-euclidean", "l2", 1e-3, 100},
         {"msmarco", "cd", 1e-3, 1000},
         {"cohere", "cd", 1e-3, 1000},
         {"laion_image", "cd", 1e-3, 1000}, // image to image retrieval
@@ -139,13 +140,15 @@ void online_exp()
 void indexing_exp()
 {
     std::vector<std::pair<std::string, std::string>> dataset_metrics = {
-        {"deep-image-96-angular", "cd"},
-        {"glove-100-angular", "cd"},
-        {"msmarco", "cd"},
-        {"cohere", "cd"},
-        {"laion_image", "cd"},
-        {"cluster_mg_uniform_100d", "cd"},
-        {"cluster_mg_zipf_100d", "cd"}};
+        // {"deep-image-96-angular", "cd"},
+        // {"glove-100-angular", "cd"},
+        // {"sift-128-euclidean", "l2"},
+        // {"msmarco", "cd"},
+        // {"cohere", "cd"},
+        // {"laion_image", "cd"},
+        // {"cluster_mg_uniform_100d", "cd"},
+        // {"cluster_mg_zipf_100d", "cd"}
+    };
 
     for (const auto [dataset, metric] : dataset_metrics)
     {
@@ -238,6 +241,7 @@ void offline_exp()
     std::vector<std::tuple<std::string, std::string, float>> dataset_metrics = {
         {"deep-image-96-angular", "cd", 1e-3},
         {"glove-100-angular", "cd", 1e-3},
+        {"sift-128-euclidean", "l2", 1e-3},
         {"msmarco", "cd", 1e-3},
         {"cohere", "cd", 1e-3},
         {"laion_image", "cd", 1e-3},
@@ -1344,6 +1348,7 @@ void per_query_result_exp()
     std::vector<std::tuple<std::string, std::string, float, int>> dataset_metrics = {
         {"deep-image-96-angular", "cd", 1e-3, 100},
         {"glove-100-angular", "cd", 1e-3, 100},
+        {"sift-128-euclidean", "l2", 1e-3, 100},
         {"msmarco", "cd", 1e-3, 1000},
         {"cohere", "cd", 1e-3, 1000},
         {"laion_image", "cd", 1e-3, 1000}, // image to image retrieval
@@ -1439,20 +1444,20 @@ int main()
     }
     std::cout << "EXPERIMENTS_ROOT: " << root_path << std::endl;
 
-    // indexing_exp(); // indexes are precomputed, uncomment to run if needed
+    indexing_exp(); // indexes are precomputed, uncomment to run if needed
     // functions for computing groundtruth: compute_groundtruth_laion_text2image and compute_and_save_gound_truth
 
-    offline_exp();          // offline computation of estimator, samplings, and ef-adaptor
-    online_exp();           // onine search experiments
-    sensitivity_analysis(); // sensitivity analysis for estimator parameters, including k and recall target
+    // offline_exp();          // offline computation of estimator, samplings, and ef-adaptor
+    // online_exp();           // onine search experiments
+    // sensitivity_analysis(); // sensitivity analysis for estimator parameters, including k and recall target
 
-    insert_exp(true); // insert experiment with setup
-    delete_exp(true); // delete experiment with setup
+    // insert_exp(true); // insert experiment with setup
+    // delete_exp(true); // delete experiment with setup
 
-    ablation_study_distance_list_size();      // ablation study on distance list size
-    ablation_study_sampling_size();           // ablation study on sampling size
-    ablation_study_weighted_decay_function(); // ablation study on weighted decay functions
+    // ablation_study_distance_list_size();      // ablation study on distance list size
+    // ablation_study_sampling_size();           // ablation study on sampling size
+    // ablation_study_weighted_decay_function(); // ablation study on weighted decay functions
 
-    per_query_result_exp(); // per-query result experiments
+    // per_query_result_exp(); // per-query result experiments
     return 0;
 }
