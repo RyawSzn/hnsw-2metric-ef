@@ -40,19 +40,20 @@ int main(int argc, char** argv) {
                   << "  --max_ef <int>          Maximum EF allowed (default: 5000)\n"
                   << "  --repeat <int>          Number of repeats for search (default: 1)\n"
                   << "  --generate_table        Force re-generation of the lookup table\n"
-                  << "  --RC_bins <int>         Number of RC bins (default: 20)\n"
-                  << "  --RV_bins <int>         Number of RV bins (default: 20)\n"
-                  << "  --sample_size <int>     Queries to sample for table generation (default: 2000)\n";
+                  << "  --EP_bins <int>         Number of RC bins (default: 32)\n"
+                  << "  --RV_bins <int>         Number of RV bins (default: 32)\n"
+                  << "  --sample_size <int>     Queries to sample for table generation (default: 5000)\n";
         return 0;
     }
 
     std::string dataset = get_cmd_option(argv, argv + argc, "--dataset", "glove-100-angular");
     float expected_recall = std::stof(get_cmd_option(argv, argv + argc, "--target_recall", "0.95"));
+    int k = std::stoi(get_cmd_option(argv, argv + argc, "--k", "32"));
     int max_ef = std::stoi(get_cmd_option(argv, argv + argc, "--max_ef", "5000"));
     int repeat = std::stoi(get_cmd_option(argv, argv + argc, "--repeat", "1"));
     bool force_generate = cmd_option_exists(argv, argv + argc, "--generate_table");
-    int RC_BINS = std::stoi(get_cmd_option(argv, argv + argc, "--RC_bins", "20"));
-    int RV_BINS = std::stoi(get_cmd_option(argv, argv + argc, "--RV_bins", "20"));
+    int EP_BINS = std::stoi(get_cmd_option(argv, argv + argc, "--EP_bins", "32"));
+    int RV_BINS = std::stoi(get_cmd_option(argv, argv + argc, "--RV_bins", "32"));
     int sample_size = std::stoi(get_cmd_option(argv, argv + argc, "--sample_size", "5000"));
 
     // Auto-resolve lookup CSV name to match Goal 1
@@ -60,7 +61,7 @@ int main(int argc, char** argv) {
     fs::path root = root_env ? fs::path(root_env) : fs::current_path();
 
     // We expect the CSV to have the dataset name in it
-    std::string lookup_csv_name = "lookup_table_" + dataset + "_" + std::to_string(RC_BINS) + "x" + std::to_string(RV_BINS) + ".csv";
+    std::string lookup_csv_name = "lookup_table_" + dataset + "_" + std::to_string(EP_BINS) + "x" + std::to_string(RV_BINS) + ".csv";
     std::string lookup_csv = (root / "2metric/lookup" / lookup_csv_name).string();
     if (!fs::exists(lookup_csv)) {
         lookup_csv = "/home/ryawszn/experiments/2metric/lookup/" + lookup_csv_name;
@@ -101,15 +102,12 @@ int main(int argc, char** argv) {
         fs::create_directories(fs::path(lookup_csv).parent_path());
         lookup = TableGenerator2Metric::generate(
             alg_hnsw, query_vectors, ground_truth, global_mean,
-            expected_recall, RC_BINS, RV_BINS, max_ef, sample_size, lookup_csv
+            expected_recall, k, EP_BINS, RV_BINS, max_ef, sample_size, lookup_csv
         );
     } else {
         std::cout << "Loading existing lookup table from " << lookup_csv << "\n";
-        lookup = LookupTable2D(lookup_csv, 50);
+        lookup = LookupTable2D(lookup_csv, 50, expected_recall);
     }
-
-    size_t k = ground_truth.cols();
-    if (k > 10) k = 10;
 
     int nq = query_vectors.rows();
     std::vector<std::vector<size_t>> result(nq, std::vector<size_t>(k, 0));
@@ -118,24 +116,25 @@ int main(int argc, char** argv) {
     std::cout << "Starting 2metric adaptive search...\n";
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    float running_ef_sum = 0.0f;
+    const float ema_alpha = 0.3f;
+    const float ema_floor_cap = 0.5f * max_ef;
+    float ema_ef = 0.0f;
 
     for (int i = 0; i < nq; ++i) {
         Eigen::RowVectorXf q = query_vectors.row(i);
 
         auto est = Estimator2Metric::probe_query(alg_hnsw, q.data(), global_mean, 50, 15.0f);
 
-        int dyn_ef = lookup.get_ef(est.RC, est.RV_rank);
+        int dyn_ef = lookup.get_ef(est.d_ep, est.RV_rank);
         if (i > 0) {
-            int avg_ef = static_cast<int>(running_ef_sum / i);
-            dyn_ef = std::max(dyn_ef, avg_ef);
+            dyn_ef = std::max(dyn_ef, static_cast<int>(std::min(ema_ef, ema_floor_cap)));
         }
-
         if (dyn_ef < static_cast<int>(k)) dyn_ef = static_cast<int>(k);
         if (dyn_ef > max_ef) dyn_ef = max_ef;
         efs_used[i] = dyn_ef;
 
-        running_ef_sum += dyn_ef;
+        ema_ef = (i == 0) ? static_cast<float>(dyn_ef)
+                          : ema_alpha * dyn_ef + (1.0f - ema_alpha) * ema_ef;
 
         alg_hnsw->setEf(dyn_ef);
         auto pq = alg_hnsw->searchKnn(q.data(), k);
@@ -170,6 +169,35 @@ int main(int argc, char** argv) {
     std::cout << "5th %ile Recall:  " << percentile_5 << "\n";
     std::cout << "1st %ile Recall:  " << percentile_1 << "\n";
     std::cout << "------------------------------------------\n";
+
+    std::string stats_json = root.string() + "/2metric/lookup/run_stats_" + dataset + "_" + std::to_string(EP_BINS) + "x" + std::to_string(RV_BINS) + ".json";
+    std::ofstream out_json(stats_json);
+    if (out_json) {
+        out_json << "{\n";
+        out_json << "  \"search_ms\": " << duration.count() << ",\n";
+        out_json << "  \"avg_recall\": " << avg_recall << ",\n";
+        out_json << "  \"avg_ef\": " << avg_ef << ",\n";
+        out_json << "  \"pct5_recall\": " << percentile_5 << ",\n";
+        out_json << "  \"pct1_recall\": " << percentile_1 << ",\n";
+        out_json << "  \"target_recall\": " << expected_recall << ",\n";
+        out_json << "  \"max_ef\": " << max_ef << ",\n";
+        out_json << "  \"nq\": " << nq << ",\n";
+        
+        std::map<int, int> ef_dist;
+        for (int ef : efs_used) ef_dist[ef]++;
+        
+        out_json << "  \"ef_dist\": {\n";
+        int count_dist = 0;
+        for (auto const& [ef, count] : ef_dist) {
+            out_json << "    \"" << ef << "\": " << count;
+            if (++count_dist < ef_dist.size()) out_json << ",";
+            out_json << "\n";
+        }
+        out_json << "  }\n";
+        out_json << "}\n";
+        out_json.close();
+        std::cout << "Saved run statistics to " << stats_json << "\n";
+    }
 
     // Call the statistics function similar to adaptive_ef_analysis
     adaptive_ef_analysis_2metric(dataset, efs_used);

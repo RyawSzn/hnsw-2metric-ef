@@ -19,11 +19,11 @@ using namespace hnsw_2metric;
 namespace fs = std::filesystem;
 
 // Find exact EF required to hit target recall for a single query
-std::pair<int, float> find_true_ef_for_query(HierarchicalNSW<float>* alg_hnsw, const float* query, const hnswdis::MatrixXi& ground_truth, int original_idx, float target_recall, int max_ef) {
+std::pair<int, float> find_true_ef_for_query(HierarchicalNSW<float>* alg_hnsw, const float* query, const hnswdis::MatrixXi& ground_truth, int original_idx, float target_recall, int max_ef, int SEARCH_K) {
     int best_ef = 50;
     float best_recall = 0.0f;
     size_t k_val = ground_truth.cols();
-    if (k_val > 10) k_val = 10;
+    if (k_val > SEARCH_K) k_val = SEARCH_K;
 
     for (int ef = 50; ef <= max_ef; ef += 50) {
         alg_hnsw->setEf(ef);
@@ -56,6 +56,7 @@ int main() {
     float target_recall = 0.95f;
     int max_ef = 5000;
     int sample_size = 5000;
+    int SEARCH_K = 32;
 
     const char* root_env = std::getenv("EXPERIMENTS_ROOT");
     fs::path root = root_env ? fs::path(root_env) : fs::current_path();
@@ -91,7 +92,7 @@ int main() {
 
     // --- ADA-EF Setup ---
     std::cout << "Setting up Ada-EF dependencies...\n";
-    size_t ada_k = 50;
+    size_t ada_k = 100;
 
     std::string estimator_path = (root / "statistics" / (dataset + "-estimator--k-" + std::to_string(ada_k) + ".bin")).string();
     if (!fs::exists(estimator_path)) {
@@ -114,11 +115,11 @@ int main() {
     // --- 2METRIC Setup ---
     std::cout << "Setting up 2Metric dependencies...\n";
     Eigen::RowVectorXf global_mean = full_data.colwise().mean();
-    std::string lookup_csv = (root / "2metric/lookup" / ("lookup_table_" + dataset + "_20x20.csv")).string();
+    std::string lookup_csv = (root / "2metric/lookup" / ("lookup_table_" + dataset + "_32x32.csv")).string();
     if (!fs::exists(lookup_csv)) {
-        lookup_csv = "/home/ryawszn/experiments/2metric/lookup/lookup_table_" + dataset + "_20x20.csv";
+        lookup_csv = "/home/ryawszn/experiments/2metric/lookup/lookup_table_" + dataset + "_32x32.csv";
     }
-    LookupTable2D lookup(lookup_csv, 50);
+    LookupTable2D lookup(lookup_csv, 50, target_recall);
 
     // Random sample of queries
     std::vector<int> q_idx(query_vectors.rows());
@@ -135,43 +136,46 @@ int main() {
         fs::create_directories("/home/ryawszn/experiments/2metric/compare");
     }
     std::ofstream out(out_path);
-    out << "query_idx,true_ef,ada_ef,2metric_ef,RC,RV_rank\n";
+    out << "query_idx,true_ef,ada_ef,2metric_ef,d_ep,RV_rank\n";
 
     double total_err_ada = 0;
     double total_err_2metric = 0;
     int ada_under = 0, metric2_under = 0;
 
+    #pragma omp parallel for reduction(+:total_err_ada, total_err_2metric, ada_under, metric2_under)
     for (int i = 0; i < sample_size; i++) {
         int idx = q_idx[i];
         Eigen::RowVectorXf q = query_vectors.row(idx);
 
         // 1. True EF
-        auto [true_ef, recall] = find_true_ef_for_query(alg_hnsw, q.data(), ground_truth, idx, target_recall, max_ef);
+        auto [true_ef, recall] = find_true_ef_for_query(alg_hnsw, q.data(), ground_truth, idx, target_recall, max_ef, SEARCH_K);
 
         // 2. Ada-EF
-        auto ada_res = alg_hnsw->adaptiveSearchKnn(q.data(), 10, statics_length, score_cal, &sketch);
+        auto ada_res = alg_hnsw->adaptiveSearchKnn(q.data(), SEARCH_K, statics_length, score_cal, &sketch);
         float score = ada_res.second;
         size_t ada_ef = sketch.estimate_ef2(score);
-        if (ada_ef < 10) ada_ef = 10;
+        if (ada_ef < SEARCH_K) ada_ef = SEARCH_K;
         if (ada_ef > max_ef) ada_ef = max_ef;
 
         // 3. 2Metric EF
         auto est = Estimator2Metric::probe_query(alg_hnsw, q.data(), global_mean, 50, 15.0f);
-        int m2_ef = lookup.get_ef(est.RC, est.RV_rank);
-        if (m2_ef < 10) m2_ef = 10;
+        int m2_ef = lookup.get_ef(est.d_ep, est.RV_rank);
+        if (m2_ef < SEARCH_K) m2_ef = SEARCH_K;
         if (m2_ef > max_ef) m2_ef = max_ef;
 
-        out << idx << "," << true_ef << "," << ada_ef << "," << m2_ef << "," << est.RC << "," << est.RV_rank << "\n";
+        #pragma omp critical
+        {
+            out << idx << "," << true_ef << "," << ada_ef << "," << m2_ef << "," << est.d_ep << "," << est.RV_rank << "\n";
+            if ((i + 1) % 50 == 0) {
+                std::cout << "Processed " << (i + 1) << " / " << sample_size << " queries...\n";
+            }
+        }
 
         // Stats tracking
         total_err_ada += std::abs((double)ada_ef - true_ef);
         total_err_2metric += std::abs((double)m2_ef - true_ef);
         if (ada_ef < true_ef) ada_under++;
         if (m2_ef < true_ef) metric2_under++;
-
-        if ((i + 1) % 50 == 0) {
-            std::cout << "Processed " << (i + 1) << " / " << sample_size << " queries...\n";
-        }
     }
     out.close();
 

@@ -26,13 +26,17 @@ inline void adaptive_ef_analysis_2metric(const std::string& dataset, const std::
 
     std::map<int, int> ef_distribution;
     for (int ef : efs_used) {
-        ef_distribution[ef]++;
+        int lower = (ef / 500) * 500;
+        ef_distribution[lower]++;
     }
 
-    std::cout << std::left << std::setw(10) << "EF Value" << " | " << "Query Count\n";
-    std::cout << "-----------------------\n";
+    std::cout << std::left << std::setw(12) << "EF Range" << " | " << "Query Count\n";
+    std::cout << "---------------------------\n";
     for (const auto& pair : ef_distribution) {
-        std::cout << std::left << std::setw(10) << pair.first << " | " << pair.second << "\n";
+        int lower = pair.first;
+        int upper = lower + 499;
+        std::string range_str = std::to_string(lower) + "-" + std::to_string(upper);
+        std::cout << std::left << std::setw(12) << range_str << " | " << pair.second << "\n";
     }
     std::cout << "============================================\n\n";
 }

@@ -113,9 +113,9 @@ ProbeRes probe_query(HierarchicalNSW<float>* alg_hnsw, const float* query, const
 }
 
 std::pair<int, float> find_true_ef_for_query(HierarchicalNSW<float>* alg_hnsw, const float* query, const hnswdis::MatrixXi& ground_truth, int original_idx, float target_recall, int max_ef) {
-    int best_ef = 50;
-    float best_recall = 0.0f;
-    for (int ef = 50; ef <= max_ef; ef += 50) {
+    // Binary search: recall is monotonically non-decreasing with ef.
+    // Reduces O(max_ef/step) searches to O(log2(max_ef/step)) per query.
+    auto query_recall = [&](int ef) -> float {
         alg_hnsw->setEf(ef);
         auto sres = alg_hnsw->searchKnn(query, 10);
         int hits = 0;
@@ -124,10 +124,24 @@ std::pair<int, float> find_true_ef_for_query(HierarchicalNSW<float>* alg_hnsw, c
             sres.pop();
             for (int c = 0; c < 10; c++) if (ground_truth(original_idx, c) == (int)id) { hits++; break; }
         }
-        float recall = hits / 10.0f;
-        best_ef = ef;
-        best_recall = recall;
-        if (recall >= target_recall) break;
+        return hits / 10.0f;
+    };
+
+    int lo = 50, hi = max_ef;
+    int best_ef = max_ef;
+    float best_recall = query_recall(max_ef);
+
+    while (lo <= hi) {
+        int mid = lo + (hi - lo) / 2;
+        float recall = query_recall(mid);
+        
+        if (recall >= target_recall) {
+            best_ef = mid;
+            best_recall = recall;
+            hi = mid - 50;
+        } else {
+            lo = mid + 50;
+        }
     }
     return {best_ef, best_recall};
 }

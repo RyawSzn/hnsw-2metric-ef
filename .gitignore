@@ -11,6 +11,7 @@ var/
 .vs/
 .cache/
 .opencode/
+.sisyphus/
 **.DS_Store
 *.pyc
 

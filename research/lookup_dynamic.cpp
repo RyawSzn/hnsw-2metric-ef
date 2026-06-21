@@ -237,7 +237,7 @@ int main(int argc, char** argv) {
         buckets[bRC][bRV].push_back(query_indices[i]);
     }
 
-    std::cout << "Phase 3: Stepping ef by +50 to hit Target Recall (" << target_recall << ") for each bucket...\n" << std::endl;
+    std::cout << "Phase 3: Binary-searching minimum ef to hit Target Recall (" << target_recall << ") for each bucket...\n" << std::endl;
 
     std::vector<std::vector<std::pair<int, float>>> lookup_table(RC_BINS, std::vector<std::pair<int, float>>(RV_BINS, {0, 0.0f}));
 
@@ -257,6 +257,32 @@ int main(int argc, char** argv) {
     std::ofstream out(filename);
     out << "RC_bin,RV_bin,ef,actual_recall\n";
 
+    // Helper lambda: compute average recall for a bucket at a given ef
+    auto compute_bucket_recall = [&](const std::vector<int>& query_list, int ef) -> float {
+        alg_hnsw->setEf(ef);
+        int total_hits = 0;
+        for (int q_idx : query_list) {
+            const float* query = query_vectors.row(q_idx).data();
+            auto pq = alg_hnsw->searchKnn(query, ground_truth.cols());
+            
+            std::vector<size_t> res(pq.size());
+            int count = pq.size();
+            while (!pq.empty()) {
+                res[--count] = pq.top().second;
+                pq.pop();
+            }
+
+            int hits = 0;
+            for (size_t r : res) {
+                for (int k = 0; k < ground_truth.cols(); k++) {
+                    if (r == ground_truth(q_idx, k)) { hits++; break; }
+                }
+            }
+            total_hits += hits;
+        }
+        return (float)total_hits / (query_list.size() * ground_truth.cols());
+    };
+
     for (int i = 0; i < RC_BINS; i++) {
         std::cout << " RC" << std::setw(2) << std::left << (i+1) << " |";
         for (int j = 0; j < RV_BINS; j++) {
@@ -266,40 +292,33 @@ int main(int argc, char** argv) {
                 continue;
             }
 
-            int best_ef = 50;
+            // Binary search for minimum ef that achieves target_recall
+            // Recall is monotonically non-decreasing with ef, so binary search is valid.
+            // This reduces O(max_ef/step) full scans to O(log2(max_ef/step)) per bucket.
+            int lo = 50, hi = max_ef;
+            int best_ef = max_ef;
             float best_recall = 0.0f;
 
-            for (int ef = 50; ef <= max_ef; ef += 50) {
-                alg_hnsw->setEf(ef);
-                int total_hits = 0;
-
-                for (int q_idx : query_list) {
-                    const float* query = query_vectors.row(q_idx).data();
-                    auto pq = alg_hnsw->searchKnn(query, ground_truth.cols());
-                    
-                    std::vector<size_t> res(pq.size());
-                    int count = pq.size();
-                    while (!pq.empty()) {
-                        res[--count] = pq.top().second;
-                        pq.pop();
+            while (lo <= hi) {
+                int mid = lo + (hi - lo) / 2;
+                float recall = compute_bucket_recall(query_list, mid);
+                
+                if (recall >= target_recall) {
+                    best_ef = mid;
+                    best_recall = recall;
+                    hi = mid - 50;  // Try a smaller ef
+                } else {
+                    lo = mid + 50;
+                    // Track the best recall seen even below threshold
+                    if (recall > best_recall) {
+                        best_recall = recall;
                     }
-
-                    int hits = 0;
-                    for (size_t r : res) {
-                        for (int k = 0; k < ground_truth.cols(); k++) {
-                            if (r == ground_truth(q_idx, k)) { hits++; break; }
-                        }
-                    }
-                    total_hits += hits;
                 }
+            }
 
-                float avg_recall = (float)total_hits / (query_list.size() * ground_truth.cols());
-                if (avg_recall > best_recall) {
-                    best_recall = avg_recall;
-                    best_ef = ef;
-                }
-
-                if (avg_recall >= target_recall) break; 
+            // If even max_ef didn't reach target, record the best we found
+            if (best_ef == max_ef && best_recall < target_recall) {
+                best_recall = compute_bucket_recall(query_list, max_ef);
             }
 
             lookup_table[i][j] = {best_ef, best_recall};
