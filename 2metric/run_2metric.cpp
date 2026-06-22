@@ -120,9 +120,9 @@ int main(int argc, char** argv) {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     for (int i = 0; i < nq; ++i) {
-        Eigen::RowVectorXf q = query_vectors.row(i);
+        const float* q_ptr = query_vectors.row(i).data();
 
-        auto est = Estimator2Metric::probe_query(alg_hnsw, q.data(), global_mean, 50, 15.0f);
+        auto est = Estimator2Metric::probe_query(alg_hnsw, q_ptr, global_mean, 50, 15.0f);
 
         int dyn_ef = std::max(lookup.get_ef(est.d_ep, est.RV_rank), table_avg_ef);
 
@@ -131,7 +131,7 @@ int main(int argc, char** argv) {
         efs_used[i] = dyn_ef;
 
         alg_hnsw->setEf(dyn_ef);
-        auto pq = alg_hnsw->searchKnn(q.data(), k);
+        auto pq = alg_hnsw->searchKnn(q_ptr, k);
 
         int count = pq.size();
         while (!pq.empty()) {

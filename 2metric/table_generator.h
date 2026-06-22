@@ -146,25 +146,50 @@ public:
                 int prev_ef = ef1;
                 float prev_agg_recall = rec1;
                 int ef_diff = latest_ef - prev_ef;
+                float epsilon = 1e-5f;
 
                 while (latest_agg_recall < expected_recall && latest_ef < max_ef) {
                     float recall_diff = latest_agg_recall - prev_agg_recall;
 
-                    if (recall_diff < 1e-5f && latest_agg_recall >= expected_recall - 1e-3f)
-                        break;
+                    if (recall_diff < epsilon) break;
 
+                    // Large geometric step to jump over micro-plateaus and bracket the target
                     ef_diff = std::max(
-                        (int)(ef_diff * (expected_recall - latest_agg_recall) / recall_diff),
-                        (int)(k_val * 0.5)
+                        (int)(ef_diff * (expected_recall - latest_agg_recall) / std::max(1e-6f, recall_diff)),
+                        (int)std::max(k_val * 0.5, latest_ef * 0.1) // 10% growth
                     );
 
                     int next_ef = latest_ef + ef_diff;
                     if (next_ef > max_ef) next_ef = max_ef;
 
                     float agg_recall = calc_avg_recall(q_list, next_ef);
+
+                    // // Threshold crossed! Binary search backward for precise minimal EF
+                    // if (agg_recall >= expected_recall) {
+                    //     int left = latest_ef;
+                    //     int right = next_ef;
+                    //     int best_ef = next_ef;
+                    //     float best_rec = agg_recall;
+
+                    //     while (right - left > (int)(k_val * 0.5)) {
+                    //         int mid = left + (right - left) / 2;
+                    //         float mid_rec = calc_avg_recall(q_list, mid);
+                    //         if (mid_rec >= expected_recall) {
+                    //             best_ef = mid;
+                    //             best_rec = mid_rec;
+                    //             right = mid;
+                    //         } else {
+                    //             left = mid;
+                    //         }
+                    //     }
+                    //     curve.push_back({best_ef, best_rec});
+                    //     break;
+                    // }
+
                     curve.push_back({next_ef, agg_recall});
 
-                    recall_diff = agg_recall - latest_agg_recall;
+                    float step_improvement = agg_recall - latest_agg_recall;
+                    recall_diff = step_improvement;
                     latest_ef = next_ef;
                     latest_agg_recall = agg_recall;
                 }
@@ -188,6 +213,7 @@ public:
                 bin.EP_lower = EP_bounds[i]; bin.EP_upper = EP_bounds[i+1];
                 bin.RV_lower = RV_bounds[j]; bin.RV_upper = RV_bounds[j+1];
                 bin.curve = bin_curves[i][j];
+                bin.query_count = buckets[i][j].size();
                 final_bins.push_back(bin);
 
                 if (out.is_open()) {

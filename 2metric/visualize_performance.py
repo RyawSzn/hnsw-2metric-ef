@@ -157,7 +157,7 @@ sns.heatmap(
 )
 dark_ax(
     ax_he,
-    "Lookup Table — Assigned EF per (RC, RV) Bin",
+    "Lookup Table — Assigned EF per (d_ep, RV) Bin",
     "RV_Rank Interval",
     "d_ep Interval",
 )
@@ -382,9 +382,9 @@ dark_ax(
     "error (2metric − true)",
 )
 
-# RC vs error scatter
+# d_ep vs error scatter
 sc3 = ax_rc.scatter(
-    cdf["RC"],
+    cdf["d_ep"],
     cdf["error"],
     c=np.log(cdf["true_ef"].clip(lower=1)),
     cmap="plasma",
@@ -398,8 +398,8 @@ cb3.set_label("log(true_ef)", color="white")
 cb3.ax.tick_params(colors="white")
 dark_ax(
     ax_rc,
-    "Prediction Error vs RC\n(color = log true_ef)",
-    "RC (relative contrast)",
+    "Prediction Error vs d_ep\n(color = log true_ef)",
+    "d_ep",
     "error (2metric − true)",
 )
 

@@ -25,10 +25,45 @@ class LookupTable2D {
     int default_ef;
     float target_recall;
 
+    std::vector<float> ep_bounds;
+    std::vector<float> rv_bounds;
+    std::vector<std::vector<const LookupBin*>> grid;
+
+    void build_index() {
+        if (bins.empty()) return;
+
+        std::vector<float> eps, rvs;
+        for (const auto& bin : bins) {
+            eps.push_back(bin.EP_lower);
+            rvs.push_back(bin.RV_lower);
+        }
+        std::sort(eps.begin(), eps.end());
+        eps.erase(std::unique(eps.begin(), eps.end()), eps.end());
+        std::sort(rvs.begin(), rvs.end());
+        rvs.erase(std::unique(rvs.begin(), rvs.end()), rvs.end());
+
+        ep_bounds = eps;
+        rv_bounds = rvs;
+
+        grid.resize(ep_bounds.size(), std::vector<const LookupBin*>(rv_bounds.size(), &bins[0]));
+
+        for (const auto& bin : bins) {
+            auto ep_it = std::lower_bound(ep_bounds.begin(), ep_bounds.end(), bin.EP_lower);
+            auto rv_it = std::lower_bound(rv_bounds.begin(), rv_bounds.end(), bin.RV_lower);
+            if (ep_it != ep_bounds.end() && rv_it != rv_bounds.end()) {
+                int ep_idx = std::distance(ep_bounds.begin(), ep_it);
+                int rv_idx = std::distance(rv_bounds.begin(), rv_it);
+                grid[ep_idx][rv_idx] = &bin;
+            }
+        }
+    }
+
 public:
     LookupTable2D() : default_ef(50), target_recall(0.95f) {}
     LookupTable2D(const std::vector<LookupBin>& bins_, int default_ef_ = 50, float target_recall_ = 0.95f)
-        : bins(bins_), default_ef(default_ef_), target_recall(target_recall_) {}
+        : bins(bins_), default_ef(default_ef_), target_recall(target_recall_) {
+        build_index();
+    }
 
     LookupTable2D(const std::string& csv_path, int default_ef_ = 50, float target_recall_ = 0.95f)
         : default_ef(default_ef_), target_recall(target_recall_) {
@@ -39,7 +74,7 @@ public:
         }
 
         std::string line;
-        std::getline(in, line); // Skip header
+        std::getline(in, line); 
 
         auto parse_interval = [](const std::string& s, float& lower, float& upper) {
             size_t p1 = s.find('(');
@@ -88,6 +123,7 @@ public:
             }
             bins.push_back(bin);
         }
+        build_index();
     }
 
     void set_target_recall(float recall) {
@@ -95,30 +131,19 @@ public:
     }
 
     int get_ef(float d_ep, float rv) const {
-        if (bins.empty()) return default_ef;
+        if (grid.empty()) return default_ef;
 
-        float best_dist = std::numeric_limits<float>::max();
-        const LookupBin* best_bin = &bins[0];
+        auto ep_it = std::upper_bound(ep_bounds.begin(), ep_bounds.end(), d_ep);
+        int ep_idx = std::distance(ep_bounds.begin(), ep_it) - 1;
+        if (ep_idx < 0) ep_idx = 0;
+        if (ep_idx >= (int)grid.size()) ep_idx = grid.size() - 1;
 
-        for (const auto& bin : bins) {
-            bool ep_match = (d_ep > bin.EP_lower && d_ep <= bin.EP_upper);
-            bool rv_match = (rv > bin.RV_lower && rv <= bin.RV_upper);
+        auto rv_it = std::upper_bound(rv_bounds.begin(), rv_bounds.end(), rv);
+        int rv_idx = std::distance(rv_bounds.begin(), rv_it) - 1;
+        if (rv_idx < 0) rv_idx = 0;
+        if (rv_idx >= (int)grid[0].size()) rv_idx = grid[0].size() - 1;
 
-            if (ep_match && rv_match) {
-                best_bin = &bin;
-                break;
-            }
-
-            float ep_c = (bin.EP_lower + bin.EP_upper) * 0.5f;
-            float rv_c = (bin.RV_lower + bin.RV_upper) * 0.5f;
-            float dep_diff = d_ep - ep_c;
-            float dv = rv - rv_c;
-            float dist = dep_diff * dep_diff + dv * dv;
-            if (dist < best_dist) {
-                best_dist = dist;
-                best_bin = &bin;
-            }
-        }
+        const LookupBin* best_bin = grid[ep_idx][rv_idx];
 
         if (best_bin->curve.empty()) return default_ef;
 

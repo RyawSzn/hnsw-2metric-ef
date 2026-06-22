@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <queue>
-#include <unordered_set>
 #include <cmath>
 #include <algorithm>
 #include <Eigen/Dense>
@@ -179,11 +178,6 @@ public:
         float gamma = 15.0f
     ) {
         int L = alg_hnsw->maxlevel_;
-        
-        // 1. Calculate the distance from the query to the global dataset mean.
-        // We use the space's native distance function to remain metric-agnostic (L2 or InnerProduct).
-        float d_mean = alg_hnsw->fstdistfunc_(query, global_mean.data(), alg_hnsw->dist_func_param_);
-        d_mean = std::max(1e-6f, d_mean); // Prevent division by zero
 
         // 2. Greedily drop down from the top layer to layer 0 to find the entry point.
         hnswlib::tableint currObj = alg_hnsw->enterpoint_node_;
@@ -196,7 +190,6 @@ public:
                 auto* data = reinterpret_cast<unsigned int*>(alg_hnsw->get_linklist(currObj, level));
                 int sz = alg_hnsw->getListCount(reinterpret_cast<hnswlib::linklistsizeint*>(data));
                 auto* nbrs = reinterpret_cast<hnswlib::tableint*>(data + 1);
-
                 for (int j = 0; j < sz; j++) {
                     hnswlib::tableint cand = nbrs[j];
                     float d = alg_hnsw->fstdistfunc_(query, alg_hnsw->getDataByInternalId(cand), alg_hnsw->dist_func_param_);
@@ -205,25 +198,31 @@ public:
             }
         }
 
-        // 3. Perform a bounded search on Layer 0 to track revisited nodes (Hubness/Entrapment).
-        std::priority_queue<std::pair<float, hnswlib::tableint>> top_candidates;
-        std::priority_queue<std::pair<float, hnswlib::tableint>, std::vector<std::pair<float, hnswlib::tableint>>, std::greater<std::pair<float, hnswlib::tableint>>> candidate_set;
-        std::unordered_set<hnswlib::tableint> visited;
+        // 3. Bounded probe on Layer 0. Use a flat visited bitvector for O(1) lookup.
+        const size_t max_elements = alg_hnsw->max_elements_;
+        std::vector<bool> visited(max_elements, false);
 
-        visited.insert(currObj);
+        std::priority_queue<std::pair<float, hnswlib::tableint>> top_candidates;
+        std::priority_queue<
+            std::pair<float, hnswlib::tableint>,
+            std::vector<std::pair<float, hnswlib::tableint>>,
+            std::greater<std::pair<float, hnswlib::tableint>>
+        > candidate_set;
+
+        visited[currObj] = true;
         candidate_set.emplace(curdist, currObj);
         top_candidates.emplace(curdist, currObj);
 
         float lowerBound = curdist;
-        float best_d = curdist;
-        std::vector<EdgeEval> edges;
+
+        // Collect (dist, is_revisit) pairs for RV_rank. Pre-reserve to avoid realloc.
+        std::vector<std::pair<float, bool>> edges;
+        edges.reserve(ef_probe_cap * 16);
 
         while (!candidate_set.empty()) {
-            auto current_node_pair = candidate_set.top();
-            // Stop probing if we exceed the probe cap and are further than the worst candidate
-            if (current_node_pair.first > lowerBound && top_candidates.size() == ef_probe_cap) break;
+            auto [cur_d, cur_node] = candidate_set.top();
+            if (cur_d > lowerBound && (int)top_candidates.size() == ef_probe_cap) break;
             candidate_set.pop();
-            hnswlib::tableint cur_node = current_node_pair.second;
 
             auto* data = reinterpret_cast<int*>(alg_hnsw->get_linklist0(cur_node));
             int sz = alg_hnsw->getListCount(reinterpret_cast<hnswlib::linklistsizeint*>(data));
@@ -232,48 +231,39 @@ public:
             for (int j = 0; j < sz; j++) {
                 hnswlib::tableint cand = nbrs[j];
                 float d = alg_hnsw->fstdistfunc_(query, alg_hnsw->getDataByInternalId(cand), alg_hnsw->dist_func_param_);
-                
-                // Track the absolute closest distance found so far for the RC metric
-                if (d < best_d) best_d = d;
-                
-                // Track whether this edge points to a node we've already evaluated
-                bool is_revisit = (visited.find(cand) != visited.end());
-                edges.push_back({d, is_revisit});
+
+                bool is_revisit = visited[cand];
+                edges.emplace_back(d, is_revisit);
 
                 if (!is_revisit) {
-                    visited.insert(cand);
-                    if (top_candidates.size() < ef_probe_cap || lowerBound > d) {
+                    visited[cand] = true;
+                    if ((int)top_candidates.size() < ef_probe_cap || lowerBound > d) {
                         candidate_set.emplace(d, cand);
                         top_candidates.emplace(d, cand);
-                        if (top_candidates.size() > ef_probe_cap) top_candidates.pop();
+                        if ((int)top_candidates.size() > ef_probe_cap) top_candidates.pop();
                         lowerBound = top_candidates.top().first;
                     }
                 }
             }
         }
 
-        // 4. Sort all traversed edges by distance to apply rank-based weighting
-        std::sort(edges.begin(), edges.end(), [](const EdgeEval& a, const EdgeEval& b) {
-            return a.dist < b.dist;
+        // 4. Sort edges by distance, then accumulate RV_rank with exp-decay weights.
+        std::sort(edges.begin(), edges.end(), [](const auto& a, const auto& b) {
+            return a.first < b.first;
         });
 
-        // 5. Calculate Topological Rank Entrapment (RV_rank) using exponential decay
         int N = edges.size();
-        float sum_tot = 0, sum_vis = 0;
+        float sum_tot = 0.0f, sum_vis = 0.0f;
+        const float inv_N = N > 0 ? 1.0f / N : 1.0f;
         for (int i = 0; i < N; i++) {
-            float rank_ratio = (float)(i + 1) / N; // Normalized rank in (0, 1]
-            float w = std::exp(-gamma * rank_ratio); // Heavy weight to close nodes
+            float w = std::exp(-gamma * (i + 1) * inv_N);
             sum_tot += w;
-            if (edges[i].is_revisit) sum_vis += w;
+            if (edges[i].second) sum_vis += w;
         }
 
         EstimatorResult res;
-        // RC = Global Distance / Local Distance. High contrast = distinct cluster = easy.
-        res.d_ep = curdist;
-        
-        // RV = Weighted Revisit Ratio. High revisit = trapped in a hub = hard.
+        res.d_ep    = curdist;
         res.RV_rank = sum_vis / std::max(1e-6f, sum_tot);
-        
         return res;
     }
 };
