@@ -1394,6 +1394,114 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         return {result, base_layer_result.second};
     }
 
+    // Resume a Layer-0 search from the state left by probe_with_state().
+    //
+    // Parameters (all moved in — caller should std::move them):
+    //   probe_top       : W, max-heap of the ef_probe_cap best nodes found so far
+    //   probe_frontier  : W_d, min-heap of queued-but-unexpanded nodes at probe end
+    //   probe_visited   : bitvector; true for every node whose dist was computed
+    //   query_data      : raw query vector
+    //   k               : number of results to return
+    //   ef_lookup       : target working-set size for the resumed search (>= ef_probe_cap)
+    //
+    // Returns top-k results as an external-label priority queue (same as searchKnn).
+    std::priority_queue<std::pair<dist_t, labeltype>>
+    searchKnnFromProbeState(
+        std::priority_queue<std::pair<dist_t, tableint>> probe_top,
+        std::priority_queue<
+            std::pair<dist_t, tableint>,
+            std::vector<std::pair<dist_t, tableint>>,
+            std::greater<std::pair<dist_t, tableint>>
+        > probe_frontier,
+        std::vector<bool> probe_visited,
+        const void* query_data,
+        size_t k,
+        size_t ef_lookup
+    ) const {
+        std::priority_queue<std::pair<dist_t, labeltype>> result;
+        if (cur_element_count == 0) return result;
+
+        // ef_lookup must be at least k and at least the probe cap already reached.
+        if (ef_lookup < k) ef_lookup = k;
+
+        // ---- Initialise working sets from probe state ----
+
+        // top_candidates (W): probe already filled this to ef_probe_cap.
+        // If ef_lookup > ef_probe_cap we keep all of W; trimming is not needed
+        // because the loop below will naturally expand the set.
+        // If ef_lookup <= current size (edge case: same ef), trim to ef_lookup.
+        std::priority_queue<std::pair<dist_t, tableint>, std::vector<std::pair<dist_t, tableint>>, CompareByFirst> top_candidates;
+        {
+            // Drain probe_top (max-heap by dist, std::less) into a temp vector,
+            // then push into top_candidates (CompareByFirst = same ordering).
+            std::vector<std::pair<dist_t, tableint>> tmp;
+            tmp.reserve(probe_top.size());
+            while (!probe_top.empty()) {
+                tmp.push_back(probe_top.top());
+                probe_top.pop();
+            }
+            for (auto& p : tmp) top_candidates.push(p);
+            // Trim if ef_lookup is smaller than what the probe already collected.
+            while (top_candidates.size() > ef_lookup) top_candidates.pop();
+        }
+
+        dist_t lowerBound = top_candidates.empty()
+            ? std::numeric_limits<dist_t>::max()
+            : top_candidates.top().first;
+
+        // candidate_set: min-heap (best/nearest on top) — reuse W_d frontier directly.
+        // probe_frontier is already a min-heap with std::greater, which is exactly
+        // the candidate_set convention used in searchBaseLayerST.
+        std::priority_queue<
+            std::pair<dist_t, tableint>,
+            std::vector<std::pair<dist_t, tableint>>,
+            std::greater<std::pair<dist_t, tableint>>
+        > candidate_set = std::move(probe_frontier);
+
+        // visited bitvector — reuse from probe, no re-allocation needed.
+        std::vector<bool>& visited = probe_visited;
+
+        // ---- Standard HNSW Layer-0 greedy loop ----
+        while (!candidate_set.empty()) {
+            std::pair<dist_t, tableint> current_node_pair = candidate_set.top();
+            dist_t candidate_dist = current_node_pair.first;
+
+            if (candidate_dist > lowerBound && top_candidates.size() == ef_lookup) break;
+            candidate_set.pop();
+
+            tableint current_node_id = current_node_pair.second;
+            int* data = (int*)get_linklist0(current_node_id);
+            size_t size = getListCount((linklistsizeint*)data);
+
+            for (size_t j = 1; j <= size; j++) {
+                int candidate_id = *(data + j);
+                if (visited[candidate_id]) continue;
+                visited[candidate_id] = true;
+
+                char* currObj1 = getDataByInternalId(candidate_id);
+                dist_t dist = fstdistfunc_(query_data, currObj1, dist_func_param_);
+
+                if (top_candidates.size() < ef_lookup || lowerBound > dist) {
+                    candidate_set.emplace(dist, candidate_id);
+
+                    if (!isMarkedDeleted(candidate_id)) {
+                        top_candidates.emplace(dist, candidate_id);
+                    }
+                    while (top_candidates.size() > ef_lookup) top_candidates.pop();
+                    if (!top_candidates.empty()) lowerBound = top_candidates.top().first;
+                }
+            }
+        }
+
+        while (top_candidates.size() > k) top_candidates.pop();
+        while (!top_candidates.empty()) {
+            std::pair<dist_t, tableint> rez = top_candidates.top();
+            result.push({rez.first, getExternalLabel(rez.second)});
+            top_candidates.pop();
+        }
+        return result;
+    }
+
     // bare_bone_search means there is no check for deletions and stop condition is ignored in return of extra performance
     template <bool bare_bone_search = true, bool collect_metrics = false>
     std::pair<std::priority_queue<std::pair<dist_t, tableint>, std::vector<std::pair<dist_t, tableint>>, CompareByFirst>, float>

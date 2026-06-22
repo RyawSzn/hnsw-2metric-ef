@@ -122,16 +122,19 @@ int main(int argc, char** argv) {
     for (int i = 0; i < nq; ++i) {
         const float* q_ptr = query_vectors.row(i).data();
 
-        auto est = Estimator2Metric::probe_query(alg_hnsw, q_ptr, global_mean, 32, 15.0f);
+        auto state = Estimator2Metric::probe_with_state(alg_hnsw, q_ptr, global_mean, 32, 15.0f);
 
-        int dyn_ef = std::max(lookup.get_ef(est.entry_point_dist, est.revisit_rank), table_avg_ef);
-
+        int dyn_ef = std::max(lookup.get_ef(state.entry_point_dist, state.revisit_rank), table_avg_ef);
         if (dyn_ef < static_cast<int>(k)) dyn_ef = static_cast<int>(k);
         if (dyn_ef > max_ef) dyn_ef = max_ef;
         efs_used[i] = dyn_ef;
 
-        alg_hnsw->setEf(dyn_ef);
-        auto pq = alg_hnsw->searchKnn(q_ptr, k);
+        auto pq = alg_hnsw->searchKnnFromProbeState(
+            std::move(state.top_candidates),
+            std::move(state.candidate_frontier),
+            std::move(state.visited),
+            q_ptr, k, static_cast<size_t>(dyn_ef)
+        );
 
         int count = pq.size();
         while (!pq.empty()) {

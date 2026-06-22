@@ -12,6 +12,7 @@ var/
 .cache/
 .opencode/
 .sisyphus/
+.slim/deepwork
 **.DS_Store
 *.pyc
 
