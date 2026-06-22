@@ -59,12 +59,12 @@ class LookupTable2D {
 
 public:
     LookupTable2D() : default_ef(32), target_recall(0.95f) {}
-    LookupTable2D(const std::vector<LookupBin>& bins_, float target_recall_ = 0.95f, int default_ef_ = 32)
+    LookupTable2D(const std::vector<LookupBin>& bins_, int default_ef_ = 32, float target_recall_ = 0.95f)
         : bins(bins_), default_ef(default_ef_), target_recall(target_recall_) {
         build_index();
     }
 
-    LookupTable2D(const std::string& csv_path, float target_recall_ = 0.95f, int default_ef_ = 32)
+    LookupTable2D(const std::string& csv_path, int default_ef_ = 32, float target_recall_ = 0.95f)
         : default_ef(default_ef_), target_recall(target_recall_) {
         std::ifstream in(csv_path);
         if (!in.is_open()) {

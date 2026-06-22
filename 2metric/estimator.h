@@ -22,8 +22,8 @@ public:
         hnswlib::HierarchicalNSW<float>* alg_hnsw,
         const float* query,
         const Eigen::RowVectorXf& global_mean,
-        int ef_probe_cap = 100,
-        float gamma = 15.0f
+        int ef_probe_cap = 128,
+        float gamma = 16.0f
     ) {
         int L = alg_hnsw->maxlevel_;
 
@@ -61,7 +61,7 @@ public:
         candidate_set.emplace(curdist, currObj);
         top_candidates.emplace(curdist, currObj);
 
-        float lowerBound = curdist;
+        float lower_bound = curdist;
 
         // Collect (dist, is_revisit) pairs for revisit_rank. Pre-reserve to avoid realloc.
         std::vector<std::pair<float, bool>> edges;
@@ -69,7 +69,7 @@ public:
 
         while (!candidate_set.empty()) {
             auto [cur_d, cur_node] = candidate_set.top();
-            if (cur_d > lowerBound && (int)top_candidates.size() == ef_probe_cap) break;
+            if (cur_d > lower_bound && (int)top_candidates.size() == ef_probe_cap) break;
             candidate_set.pop();
 
             auto* data = reinterpret_cast<int*>(alg_hnsw->get_linklist0(cur_node));
@@ -85,11 +85,11 @@ public:
 
                 if (!is_revisit) {
                     visited[cand] = true;
-                    if ((int)top_candidates.size() < ef_probe_cap || lowerBound > d) {
+                    if ((int)top_candidates.size() < ef_probe_cap || lower_bound > d) {
                         candidate_set.emplace(d, cand);
                         top_candidates.emplace(d, cand);
                         if ((int)top_candidates.size() > ef_probe_cap) top_candidates.pop();
-                        lowerBound = top_candidates.top().first;
+                        lower_bound = top_candidates.top().first;
                     }
                 }
             }
@@ -110,8 +110,8 @@ public:
         }
 
         EstimatorResult res;
-        res.entry_point_dist    = curdist;
-        res.revisit_rank = sum_vis / std::max(1e-6f, sum_tot);
+        res.entry_point_dist = curdist;
+        res.revisit_rank = sum_vis / std::max(1e-5f, sum_tot);
         return res;
     }
 };

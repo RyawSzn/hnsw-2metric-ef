@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
         );
     } else {
         std::cout << "Loading existing lookup table from " << lookup_csv << "\n";
-        lookup = LookupTable2D(lookup_csv, 50, expected_recall);
+        lookup = LookupTable2D(lookup_csv, 32, expected_recall);
     }
 
     int table_avg_ef = lookup.get_average_ef();
@@ -176,10 +176,10 @@ int main(int argc, char** argv) {
         out_json << "  \"target_recall\": " << expected_recall << ",\n";
         out_json << "  \"max_ef\": " << max_ef << ",\n";
         out_json << "  \"nq\": " << nq << ",\n";
-        
+
         std::map<int, int> ef_dist;
         for (int ef : efs_used) ef_dist[ef]++;
-        
+
         out_json << "  \"ef_dist\": {\n";
         int count_dist = 0;
         for (auto const& [ef, count] : ef_dist) {

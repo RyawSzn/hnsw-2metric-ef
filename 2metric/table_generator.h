@@ -51,7 +51,7 @@ public:
         for (int i = 0; i < nq; i++) {
             int q_idx = query_indices[i];
             Eigen::RowVectorXf q = full_query_vectors.row(q_idx);
-            auto est = Estimator2Metric::probe_query(alg_hnsw, q.data(), global_mean, 50, 15.0f);
+            auto est = Estimator2Metric::probe_query(alg_hnsw, q.data(), global_mean, 32, 16.0f);
             ep_scores[i] = est.entry_point_dist;
             rv_scores[i] = est.revisit_rank;
         }
@@ -209,7 +209,7 @@ public:
             std::cout << "Lookup table generated and saved to " << save_csv_path << "\n";
         }
 
-        return LookupTable2D(final_bins, 50, target_recall);
+        return LookupTable2D(final_bins, 32, target_recall);
     }
 };
 
