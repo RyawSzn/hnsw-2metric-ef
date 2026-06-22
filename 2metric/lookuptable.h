@@ -7,6 +7,7 @@
 #include <iostream>
 #include <cmath>
 #include <limits>
+#include <algorithm>
 
 namespace hnsw_2metric {
 
@@ -26,10 +27,10 @@ class LookupTable2D {
 
 public:
     LookupTable2D() : default_ef(50), target_recall(0.95f) {}
-    LookupTable2D(const std::vector<LookupBin>& bins_, int default_ef_ = 50, float target_recall_ = 0.95f) 
+    LookupTable2D(const std::vector<LookupBin>& bins_, int default_ef_ = 50, float target_recall_ = 0.95f)
         : bins(bins_), default_ef(default_ef_), target_recall(target_recall_) {}
 
-    LookupTable2D(const std::string& csv_path, int default_ef_ = 50, float target_recall_ = 0.95f) 
+    LookupTable2D(const std::string& csv_path, int default_ef_ = 50, float target_recall_ = 0.95f)
         : default_ef(default_ef_), target_recall(target_recall_) {
         std::ifstream in(csv_path);
         if (!in.is_open()) {
@@ -54,7 +55,7 @@ public:
 
         while (std::getline(in, line)) {
             if (line.empty()) continue;
-            
+
             size_t p1 = line.find("\",\"");
             if (p1 == std::string::npos) continue;
             size_t p2 = line.find("\",\"", p1 + 3);
@@ -65,7 +66,7 @@ public:
             std::string ep_str = line.substr(0, p1 + 1);
             std::string rv_str = line.substr(p1 + 3, p2 - (p1 + 3) + 1);
             std::string qc_str = line.substr(p2 + 3, p3 - (p2 + 3));
-            std::string curve_str = line.substr(p3 + 4); 
+            std::string curve_str = line.substr(p3 + 4);
             if (!curve_str.empty() && curve_str.back() == '"') {
                 curve_str.pop_back();
             }
@@ -120,13 +121,13 @@ public:
         }
 
         if (best_bin->curve.empty()) return default_ef;
-        
+
         for (const auto& pt : best_bin->curve) {
             if (pt.second >= target_recall) {
                 return pt.first;
             }
         }
-        
+
         return best_bin->curve.back().first;
     }
 

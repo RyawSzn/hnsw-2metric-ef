@@ -93,7 +93,6 @@ public:
 
 
         float expected_recall = target_recall;
-        float epsilon = 1e-6f;
 
         auto calc_avg_recall = [&](const std::vector<int>& q_list, int ef) {
             alg_hnsw->setEf(ef);
@@ -147,28 +146,27 @@ public:
                 int prev_ef = ef1;
                 float prev_agg_recall = rec1;
                 int ef_diff = latest_ef - prev_ef;
-                float epsilon = 1e-5f;
 
-                while (expected_recall < latest_agg_recall && latest_ef < max_ef) {
+                while (latest_agg_recall < expected_recall && latest_ef < max_ef) {
                     float recall_diff = latest_agg_recall - prev_agg_recall;
 
-                    if (recall_diff < epsilon) break;
+                    if (recall_diff < 1e-5f && latest_agg_recall >= expected_recall - 1e-3f)
+                        break;
 
-                    // The dynamic proportional guess
-                    int step = (int)(ef_diff * (expected_recall - latest_agg_recall) / recall_diff);
-                    int min_step = (int)(k_val * 0.5);
-                    ef_diff = std::max(step, min_step);
+                    ef_diff = std::max(
+                        (int)(ef_diff * (expected_recall - latest_agg_recall) / recall_diff),
+                        (int)(k_val * 0.5)
+                    );
 
                     int next_ef = latest_ef + ef_diff;
                     if (next_ef > max_ef) next_ef = max_ef;
 
-                    float next_rec = calc_avg_recall(q_list, next_ef);
-                    curve.push_back({next_ef, next_rec});
+                    float agg_recall = calc_avg_recall(q_list, next_ef);
+                    curve.push_back({next_ef, agg_recall});
 
-                    prev_ef = latest_ef;
-                    prev_agg_recall = latest_agg_recall;
+                    recall_diff = agg_recall - latest_agg_recall;
                     latest_ef = next_ef;
-                    latest_agg_recall = next_rec;
+                    latest_agg_recall = agg_recall;
                 }
 
                 bin_curves[i][j] = curve;

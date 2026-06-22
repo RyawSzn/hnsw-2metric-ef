@@ -109,6 +109,9 @@ int main(int argc, char** argv) {
         lookup = LookupTable2D(lookup_csv, 50, expected_recall);
     }
 
+    int table_avg_ef = lookup.get_average_ef();
+    std::cout << "Lookup Table Static Average EF: " << table_avg_ef << "\n";
+
     int nq = query_vectors.rows();
     std::vector<std::vector<size_t>> result(nq, std::vector<size_t>(k, 0));
     std::vector<int> efs_used(nq);
@@ -116,25 +119,16 @@ int main(int argc, char** argv) {
     std::cout << "Starting 2metric adaptive search...\n";
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    const float ema_alpha = 0.3f;
-    const float ema_floor_cap = 0.5f * max_ef;
-    float ema_ef = 0.0f;
-
     for (int i = 0; i < nq; ++i) {
         Eigen::RowVectorXf q = query_vectors.row(i);
 
         auto est = Estimator2Metric::probe_query(alg_hnsw, q.data(), global_mean, 50, 15.0f);
 
-        int dyn_ef = lookup.get_ef(est.d_ep, est.RV_rank);
-        if (i > 0) {
-            dyn_ef = std::max(dyn_ef, static_cast<int>(std::min(ema_ef, ema_floor_cap)));
-        }
+        int dyn_ef = std::max(lookup.get_ef(est.d_ep, est.RV_rank), table_avg_ef);
+
         if (dyn_ef < static_cast<int>(k)) dyn_ef = static_cast<int>(k);
         if (dyn_ef > max_ef) dyn_ef = max_ef;
         efs_used[i] = dyn_ef;
-
-        ema_ef = (i == 0) ? static_cast<float>(dyn_ef)
-                          : ema_alpha * dyn_ef + (1.0f - ema_alpha) * ema_ef;
 
         alg_hnsw->setEf(dyn_ef);
         auto pq = alg_hnsw->searchKnn(q.data(), k);
