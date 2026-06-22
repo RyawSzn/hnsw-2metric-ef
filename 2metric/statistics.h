@@ -15,7 +15,7 @@ namespace hnsw_2metric {
 
 /**
  * @brief Analyzes the distribution of dynamically assigned `ef` values.
- * 
+ *
  * Prints out how many queries were assigned each specific `ef` value by the 2D grid,
  * matching the intent of `adaptive_ef_analysis` from `experiments_driver`.
  */
@@ -26,7 +26,7 @@ inline void adaptive_ef_analysis_2metric(const std::string& dataset, const std::
 
     std::map<int, int> ef_distribution;
     for (int ef : efs_used) {
-        int lower = (ef / 500) * 500;
+        int lower = ((ef - 1) / 100) * 100 + 1;
         ef_distribution[lower]++;
     }
 
@@ -34,7 +34,7 @@ inline void adaptive_ef_analysis_2metric(const std::string& dataset, const std::
     std::cout << "---------------------------\n";
     for (const auto& pair : ef_distribution) {
         int lower = pair.first;
-        int upper = lower + 499;
+        int upper = lower + 99;
         std::string range_str = std::to_string(lower) + "-" + std::to_string(upper);
         std::cout << std::left << std::setw(12) << range_str << " | " << pair.second << "\n";
     }

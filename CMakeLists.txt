@@ -70,16 +70,6 @@ target_link_libraries(run PRIVATE
     ${HDF5_LIBRARIES}       # Link libhdf5.so
 )
 
-add_executable(run_lid experiments_driver/run_lid.cpp)
-target_include_directories(run_lid PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(run_lid PRIVATE
-    hnswlib
-    Eigen3::Eigen
-    Boost::boost
-    ${HDF5_CXX_LIBRARIES}
-    ${HDF5_LIBRARIES}
-)
-
 add_executable(reader research/reader.cpp)
 target_include_directories(reader PRIVATE ${HDF5_INCLUDE_DIRS})
 target_link_libraries(reader PRIVATE
@@ -89,48 +79,6 @@ target_link_libraries(reader PRIVATE
     ${HDF5_CXX_LIBRARIES}
     ${HDF5_LIBRARIES}
 )
-
-add_executable(lookup_dynamic research/lookup_dynamic.cpp)
-target_include_directories(lookup_dynamic PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(lookup_dynamic PRIVATE
-    hnswlib
-    Eigen3::Eigen
-    ${HDF5_CXX_LIBRARIES}
-    ${HDF5_LIBRARIES}
-)
-
-add_executable(hardness research/hardness_diagnostic.cpp)
-target_include_directories(hardness PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(hardness PRIVATE
-    hnswlib
-    Eigen3::Eigen
-    ${HDF5_CXX_LIBRARIES}
-    ${HDF5_LIBRARIES}
-)
-add_executable(tune_gamma research/tune_gamma.cpp)
-target_include_directories(tune_gamma PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(tune_gamma PRIVATE hnswlib Eigen3::Eigen ${HDF5_CXX_LIBRARIES})
-add_executable(test_log_datasets research/test_log_datasets.cpp)
-target_include_directories(test_log_datasets PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(test_log_datasets PRIVATE hnswlib Eigen3::Eigen ${HDF5_CXX_LIBRARIES})
-add_executable(test_best_rv research/test_best_rv.cpp)
-target_include_directories(test_best_rv PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(test_best_rv PRIVATE hnswlib Eigen3::Eigen ${HDF5_CXX_LIBRARIES})
-add_executable(test_unweighted research/test_unweighted.cpp)
-target_include_directories(test_unweighted PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(test_unweighted PRIVATE hnswlib Eigen3::Eigen ${HDF5_CXX_LIBRARIES})
-add_executable(test_rank_weight research/test_rank_weight.cpp)
-target_include_directories(test_rank_weight PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(test_rank_weight PRIVATE hnswlib Eigen3::Eigen ${HDF5_CXX_LIBRARIES})
-add_executable(test_hubness research/test_hubness.cpp)
-target_include_directories(test_hubness PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(test_hubness PRIVATE hnswlib Eigen3::Eigen ${HDF5_CXX_LIBRARIES})
-add_executable(test_all_rv research/test_all_rv.cpp)
-target_include_directories(test_all_rv PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(test_all_rv PRIVATE hnswlib Eigen3::Eigen ${HDF5_CXX_LIBRARIES})
-add_executable(test_final_rank research/test_final_rank.cpp)
-target_include_directories(test_final_rank PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(test_final_rank PRIVATE hnswlib Eigen3::Eigen ${HDF5_CXX_LIBRARIES})
 
 add_executable(run_2metric 2metric/run_2metric.cpp)
 target_include_directories(run_2metric PRIVATE ${HDF5_INCLUDE_DIRS})

@@ -40,8 +40,8 @@ int main(int argc, char** argv) {
                   << "  --max_ef <int>          Maximum EF allowed (default: 5000)\n"
                   << "  --repeat <int>          Number of repeats for search (default: 1)\n"
                   << "  --generate_table        Force re-generation of the lookup table\n"
-                  << "  --EP_bins <int>         Number of RC bins (default: 32)\n"
-                  << "  --RV_bins <int>         Number of RV bins (default: 32)\n"
+                  << "  --ep_bins <int>         Number of relative_contrast bins (default: 32)\n"
+                  << "  --rv_bins <int>         Number of RV bins (default: 32)\n"
                   << "  --sample_size <int>     Queries to sample for table generation (default: 5000)\n";
         return 0;
     }
@@ -52,8 +52,8 @@ int main(int argc, char** argv) {
     int max_ef = std::stoi(get_cmd_option(argv, argv + argc, "--max_ef", "5000"));
     int repeat = std::stoi(get_cmd_option(argv, argv + argc, "--repeat", "1"));
     bool force_generate = cmd_option_exists(argv, argv + argc, "--generate_table");
-    int EP_BINS = std::stoi(get_cmd_option(argv, argv + argc, "--EP_bins", "32"));
-    int RV_BINS = std::stoi(get_cmd_option(argv, argv + argc, "--RV_bins", "32"));
+    int entry_point_bins = std::stoi(get_cmd_option(argv, argv + argc, "--ep_bins", "32"));
+    int revisit_bins = std::stoi(get_cmd_option(argv, argv + argc, "--rv_bins", "32"));
     int sample_size = std::stoi(get_cmd_option(argv, argv + argc, "--sample_size", "5000"));
 
     // Auto-resolve lookup CSV name to match Goal 1
@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
     fs::path root = root_env ? fs::path(root_env) : fs::current_path();
 
     // We expect the CSV to have the dataset name in it
-    std::string lookup_csv_name = "lookup_table_" + dataset + "_" + std::to_string(EP_BINS) + "x" + std::to_string(RV_BINS) + ".csv";
+    std::string lookup_csv_name = "lookup_table_" + dataset + "_" + std::to_string(entry_point_bins) + "x" + std::to_string(revisit_bins) + ".csv";
     std::string lookup_csv = (root / "2metric/lookup" / lookup_csv_name).string();
     if (!fs::exists(lookup_csv)) {
         lookup_csv = "/home/ryawszn/experiments/2metric/lookup/" + lookup_csv_name;
@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
         fs::create_directories(fs::path(lookup_csv).parent_path());
         lookup = TableGenerator2Metric::generate(
             alg_hnsw, query_vectors, ground_truth, global_mean,
-            expected_recall, k, EP_BINS, RV_BINS, max_ef, sample_size, lookup_csv
+            expected_recall, k, entry_point_bins, revisit_bins, max_ef, sample_size, lookup_csv
         );
     } else {
         std::cout << "Loading existing lookup table from " << lookup_csv << "\n";
@@ -122,9 +122,9 @@ int main(int argc, char** argv) {
     for (int i = 0; i < nq; ++i) {
         const float* q_ptr = query_vectors.row(i).data();
 
-        auto est = Estimator2Metric::probe_query(alg_hnsw, q_ptr, global_mean, 50, 15.0f);
+        auto est = Estimator2Metric::probe_query(alg_hnsw, q_ptr, global_mean, 32, 15.0f);
 
-        int dyn_ef = std::max(lookup.get_ef(est.d_ep, est.RV_rank), table_avg_ef);
+        int dyn_ef = std::max(lookup.get_ef(est.entry_point_dist, est.revisit_rank), table_avg_ef);
 
         if (dyn_ef < static_cast<int>(k)) dyn_ef = static_cast<int>(k);
         if (dyn_ef > max_ef) dyn_ef = max_ef;
@@ -164,7 +164,7 @@ int main(int argc, char** argv) {
     std::cout << "1st %ile Recall:  " << percentile_1 << "\n";
     std::cout << "------------------------------------------\n";
 
-    std::string stats_json = root.string() + "/2metric/lookup/run_stats_" + dataset + "_" + std::to_string(EP_BINS) + "x" + std::to_string(RV_BINS) + ".json";
+    std::string stats_json = root.string() + "/2metric/lookup/run_stats_" + dataset + "_" + std::to_string(entry_point_bins) + "x" + std::to_string(revisit_bins) + ".json";
     std::ofstream out_json(stats_json);
     if (out_json) {
         out_json << "{\n";

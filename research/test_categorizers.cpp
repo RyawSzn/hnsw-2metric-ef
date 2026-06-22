@@ -50,7 +50,7 @@ global_mean.normalize();
         int q_idx = queries[i];
         const float* query = query_vectors.row(q_idx).data();
         
-        auto est = Estimator2Metric::probe_query_research(alg_hnsw, query, global_mean, 50, 15.0f);
+        auto est = Estimator2Metric::probe_query(alg_hnsw, query, global_mean, 50, 15.0f);
         
         int ef_true = 5000;
         for (int ef = 50; ef <= 5000; ef += 50) {
@@ -72,8 +72,8 @@ global_mean.normalize();
         #pragma omp critical
         {
             out << q_idx << "," << ef_true << "," 
-                << est.RC << "," << est.RV_rank << "," 
-                << est.d_mean << "," << est.d_ep << "," << est.m_LID << "\n";
+                << 0 << "," << est.revisit_rank << "," 
+                << 0 << "," << est.entry_point_dist << "," << 0 << "\n";
             if (i % 200 == 0) std::cout << "Processed " << i << " queries...\n";
         }
     }

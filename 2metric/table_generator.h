@@ -5,12 +5,9 @@
 #include <numeric>
 #include <cmath>
 #include <fstream>
-#include <iomanip>
 #include <algorithm>
 #include <string>
 
-#include "../experiments_driver/util.h"
-#include "../hnswlib/hnswlib.h"
 #include "estimator.h"
 #include "lookuptable.h"
 
@@ -25,13 +22,13 @@ public:
         const Eigen::RowVectorXf& global_mean,
         float target_recall = 0.95f,
         int k_val = 32,
-        int EP_BINS = 32,
-        int RV_BINS = 32,
+        int entry_point_bins = 32,
+        int revisit_bins = 32,
         int max_ef = 5000,
         int sample_size = 5000,
         const std::string& save_csv_path = ""
     ) {
-        std::cout << "=== Generating " << EP_BINS << "x" << RV_BINS << " Dynamic Ada-EF Curve Table ===" << std::endl;
+        std::cout << "=== Generating " << entry_point_bins << "x" << revisit_bins << " Dynamic Ada-EF Curve Table ===" << std::endl;
 
         int total_queries = full_query_vectors.rows();
         int nq = total_queries;
@@ -46,8 +43,8 @@ public:
             std::cout << "Randomly sampled " << nq << " queries for table generation." << std::endl;
         }
 
-        std::vector<float> EP_scores(nq, 0.0f);
-        std::vector<float> RV_scores(nq, 0.0f);
+        std::vector<float> ep_scores(nq, 0.0f);
+        std::vector<float> rv_scores(nq, 0.0f);
 
         std::cout << "Phase 1: Probing queries to calculate EP and RV..." << std::endl;
         #pragma omp parallel for
@@ -55,40 +52,40 @@ public:
             int q_idx = query_indices[i];
             Eigen::RowVectorXf q = full_query_vectors.row(q_idx);
             auto est = Estimator2Metric::probe_query(alg_hnsw, q.data(), global_mean, 50, 15.0f);
-            EP_scores[i] = est.d_ep;
-            RV_scores[i] = est.RV_rank;
+            ep_scores[i] = est.entry_point_dist;
+            rv_scores[i] = est.revisit_rank;
         }
 
         std::cout << "Phase 2: Calculating Quantile Boundaries..." << std::endl;
-        std::vector<float> sorted_EP = EP_scores;
-        std::vector<float> sorted_RV = RV_scores;
+        std::vector<float> sorted_EP = ep_scores;
+        std::vector<float> sorted_RV = rv_scores;
         std::sort(sorted_EP.begin(), sorted_EP.end());
         std::sort(sorted_RV.begin(), sorted_RV.end());
 
-        std::vector<float> EP_bounds(EP_BINS + 1);
-        std::vector<float> RV_bounds(RV_BINS + 1);
-        for(int i = 0; i <= EP_BINS; i++) {
-            int idx = std::min((int)(nq - 1), (int)(i * nq / (float)EP_BINS));
-            EP_bounds[i] = sorted_EP[idx];
+        std::vector<float> ep_bounds(entry_point_bins + 1);
+        std::vector<float> rv_bounds(revisit_bins + 1);
+        for(int i = 0; i <= entry_point_bins; i++) {
+            int idx = std::min((int)(nq - 1), (int)(i * nq / (float)entry_point_bins));
+            ep_bounds[i] = sorted_EP[idx];
         }
-        for(int j = 0; j <= RV_BINS; j++) {
-            int idx = std::min((int)(nq - 1), (int)(j * nq / (float)RV_BINS));
-            RV_bounds[j] = sorted_RV[idx];
+        for(int j = 0; j <= revisit_bins; j++) {
+            int idx = std::min((int)(nq - 1), (int)(j * nq / (float)revisit_bins));
+            rv_bounds[j] = sorted_RV[idx];
         }
 
-        std::vector<std::vector<std::vector<int>>> buckets(EP_BINS, std::vector<std::vector<int>>(RV_BINS));
+        std::vector<std::vector<std::vector<int>>> buckets(entry_point_bins, std::vector<std::vector<int>>(revisit_bins));
         for (int i = 0; i < nq; i++) {
-            int bEP = 0;
-            while(bEP < EP_BINS - 1 && EP_scores[i] > EP_bounds[bEP+1]) bEP++;
-            int bRV = 0;
-            while(bRV < RV_BINS - 1 && RV_scores[i] > RV_bounds[bRV+1]) bRV++;
-            buckets[bEP][bRV].push_back(query_indices[i]);
+            int bin_ep = 0;
+            while(bin_ep < entry_point_bins - 1 && ep_scores[i] > ep_bounds[bin_ep+1]) bin_ep++;
+            int bin_rv = 0;
+            while(bin_rv < revisit_bins - 1 && rv_scores[i] > rv_bounds[bin_rv+1]) bin_rv++;
+            buckets[bin_ep][bin_rv].push_back(query_indices[i]);
         }
 
-        std::cout << "Phase 3: Measuring dynamic Ada-EF per bin..." << std::endl;
+        std::cout << "Phase 3: Measuring dynamic 2metric-EF per bin..." << std::endl;
 
         std::vector<std::vector<std::vector<std::pair<int, float>>>> bin_curves(
-            EP_BINS, std::vector<std::vector<std::pair<int, float>>>(RV_BINS)
+            entry_point_bins, std::vector<std::vector<std::pair<int, float>>>(revisit_bins)
         );
 
 
@@ -118,8 +115,8 @@ public:
             return sum / q_list.size();
         };
 
-        for (int i = 0; i < EP_BINS; i++) {
-            for (int j = 0; j < RV_BINS; j++) {
+        for (int i = 0; i < entry_point_bins; i++) {
+            for (int j = 0; j < revisit_bins; j++) {
                 const auto& q_list = buckets[i][j];
                 if (q_list.empty()) continue;
 
@@ -147,6 +144,7 @@ public:
                 float prev_agg_recall = rec1;
                 int ef_diff = latest_ef - prev_ef;
                 float epsilon = 1e-5f;
+                float alpha = 0.1f; // 5% growth factor
 
                 while (latest_agg_recall < expected_recall && latest_ef < max_ef) {
                     float recall_diff = latest_agg_recall - prev_agg_recall;
@@ -155,37 +153,14 @@ public:
 
                     // Large geometric step to jump over micro-plateaus and bracket the target
                     ef_diff = std::max(
-                        (int)(ef_diff * (expected_recall - latest_agg_recall) / std::max(1e-6f, recall_diff)),
-                        (int)std::max(k_val * 0.5, latest_ef * 0.1) // 10% growth
+                        (int)(ef_diff * (expected_recall - latest_agg_recall) / recall_diff),
+                        (int)std::max(k_val * 0.5f, latest_ef * alpha)
                     );
 
                     int next_ef = latest_ef + ef_diff;
                     if (next_ef > max_ef) next_ef = max_ef;
 
                     float agg_recall = calc_avg_recall(q_list, next_ef);
-
-                    // // Threshold crossed! Binary search backward for precise minimal EF
-                    // if (agg_recall >= expected_recall) {
-                    //     int left = latest_ef;
-                    //     int right = next_ef;
-                    //     int best_ef = next_ef;
-                    //     float best_rec = agg_recall;
-
-                    //     while (right - left > (int)(k_val * 0.5)) {
-                    //         int mid = left + (right - left) / 2;
-                    //         float mid_rec = calc_avg_recall(q_list, mid);
-                    //         if (mid_rec >= expected_recall) {
-                    //             best_ef = mid;
-                    //             best_rec = mid_rec;
-                    //             right = mid;
-                    //         } else {
-                    //             left = mid;
-                    //         }
-                    //     }
-                    //     curve.push_back({best_ef, best_rec});
-                    //     break;
-                    // }
-
                     curve.push_back({next_ef, agg_recall});
 
                     float step_improvement = agg_recall - latest_agg_recall;
@@ -202,23 +177,23 @@ public:
         std::ofstream out;
         if (!save_csv_path.empty()) {
             out.open(save_csv_path);
-            if(out.is_open()) out << "d_ep_bin,RV_bin,query_count,curve\n";
+            if(out.is_open()) out << "entry_point_dist_bin,revisit_bin,query_count,curve\n";
         }
 
-        for (int i = 0; i < EP_BINS; i++) {
-            for (int j = 0; j < RV_BINS; j++) {
+        for (int i = 0; i < entry_point_bins; i++) {
+            for (int j = 0; j < revisit_bins; j++) {
                 if (buckets[i][j].empty()) continue;
 
                 LookupBin bin;
-                bin.EP_lower = EP_bounds[i]; bin.EP_upper = EP_bounds[i+1];
-                bin.RV_lower = RV_bounds[j]; bin.RV_upper = RV_bounds[j+1];
+                bin.ep_lower_bound = ep_bounds[i]; bin.ep_upper_bound = ep_bounds[i+1];
+                bin.rv_lower_bound = rv_bounds[j]; bin.rv_upper_bound = rv_bounds[j+1];
                 bin.curve = bin_curves[i][j];
                 bin.query_count = buckets[i][j].size();
                 final_bins.push_back(bin);
 
                 if (out.is_open()) {
-                    out << "\"(" << bin.EP_lower << "," << bin.EP_upper << "]\",\"("
-                        << bin.RV_lower << "," << bin.RV_upper << "]\",\"" << buckets[i][j].size() << "\",\"";
+                    out << "\"(" << bin.ep_lower_bound << "," << bin.ep_upper_bound << "]\",\"("
+                        << bin.rv_lower_bound << "," << bin.rv_upper_bound << "]\",\"" << buckets[i][j].size() << "\",\"";
 
                     for (size_t c = 0; c < bin.curve.size(); c++) {
                         out << bin.curve[c].first << ":" << bin.curve[c].second;

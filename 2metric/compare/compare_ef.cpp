@@ -136,7 +136,7 @@ int main() {
         fs::create_directories("/home/ryawszn/experiments/2metric/compare");
     }
     std::ofstream out(out_path);
-    out << "query_idx,true_ef,ada_ef,2metric_ef,d_ep,RV_rank\n";
+    out << "query_idx,true_ef,ada_ef,2metric_ef,entry_point_dist,revisit_rank\n";
 
     double total_err_ada = 0;
     double total_err_2metric = 0;
@@ -159,13 +159,13 @@ int main() {
 
         // 3. 2Metric EF
         auto est = Estimator2Metric::probe_query(alg_hnsw, q.data(), global_mean, 50, 15.0f);
-        int m2_ef = lookup.get_ef(est.d_ep, est.RV_rank);
+        int m2_ef = lookup.get_ef(est.entry_point_dist, est.revisit_rank);
         if (m2_ef < SEARCH_K) m2_ef = SEARCH_K;
         if (m2_ef > max_ef) m2_ef = max_ef;
 
         #pragma omp critical
         {
-            out << idx << "," << true_ef << "," << ada_ef << "," << m2_ef << "," << est.d_ep << "," << est.RV_rank << "\n";
+            out << idx << "," << true_ef << "," << ada_ef << "," << m2_ef << "," << est.entry_point_dist << "," << est.revisit_rank << "\n";
             if ((i + 1) % 50 == 0) {
                 std::cout << "Processed " << (i + 1) << " / " << sample_size << " queries...\n";
             }

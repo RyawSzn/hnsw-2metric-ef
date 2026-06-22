@@ -6,16 +6,15 @@
 #include <sstream>
 #include <iostream>
 #include <cmath>
-#include <limits>
 #include <algorithm>
 
 namespace hnsw_2metric {
 
 struct LookupBin {
-    float EP_lower;
-    float EP_upper;
-    float RV_lower;
-    float RV_upper;
+    float ep_lower_bound;
+    float ep_upper_bound;
+    float rv_lower_bound;
+    float rv_upper_bound;
     int query_count;
     std::vector<std::pair<int, float>> curve;
 };
@@ -34,8 +33,8 @@ class LookupTable2D {
 
         std::vector<float> eps, rvs;
         for (const auto& bin : bins) {
-            eps.push_back(bin.EP_lower);
-            rvs.push_back(bin.RV_lower);
+            eps.push_back(bin.ep_lower_bound);
+            rvs.push_back(bin.rv_lower_bound);
         }
         std::sort(eps.begin(), eps.end());
         eps.erase(std::unique(eps.begin(), eps.end()), eps.end());
@@ -48,8 +47,8 @@ class LookupTable2D {
         grid.resize(ep_bounds.size(), std::vector<const LookupBin*>(rv_bounds.size(), &bins[0]));
 
         for (const auto& bin : bins) {
-            auto ep_it = std::lower_bound(ep_bounds.begin(), ep_bounds.end(), bin.EP_lower);
-            auto rv_it = std::lower_bound(rv_bounds.begin(), rv_bounds.end(), bin.RV_lower);
+            auto ep_it = std::lower_bound(ep_bounds.begin(), ep_bounds.end(), bin.ep_lower_bound);
+            auto rv_it = std::lower_bound(rv_bounds.begin(), rv_bounds.end(), bin.rv_lower_bound);
             if (ep_it != ep_bounds.end() && rv_it != rv_bounds.end()) {
                 int ep_idx = std::distance(ep_bounds.begin(), ep_it);
                 int rv_idx = std::distance(rv_bounds.begin(), rv_it);
@@ -59,13 +58,13 @@ class LookupTable2D {
     }
 
 public:
-    LookupTable2D() : default_ef(50), target_recall(0.95f) {}
-    LookupTable2D(const std::vector<LookupBin>& bins_, int default_ef_ = 50, float target_recall_ = 0.95f)
+    LookupTable2D() : default_ef(32), target_recall(0.95f) {}
+    LookupTable2D(const std::vector<LookupBin>& bins_, float target_recall_ = 0.95f, int default_ef_ = 32)
         : bins(bins_), default_ef(default_ef_), target_recall(target_recall_) {
         build_index();
     }
 
-    LookupTable2D(const std::string& csv_path, int default_ef_ = 50, float target_recall_ = 0.95f)
+    LookupTable2D(const std::string& csv_path, float target_recall_ = 0.95f, int default_ef_ = 32)
         : default_ef(default_ef_), target_recall(target_recall_) {
         std::ifstream in(csv_path);
         if (!in.is_open()) {
@@ -74,7 +73,7 @@ public:
         }
 
         std::string line;
-        std::getline(in, line); 
+        std::getline(in, line);
 
         auto parse_interval = [](const std::string& s, float& lower, float& upper) {
             size_t p1 = s.find('(');
@@ -107,8 +106,8 @@ public:
             }
 
             LookupBin bin;
-            parse_interval(ep_str, bin.EP_lower, bin.EP_upper);
-            parse_interval(rv_str, bin.RV_lower, bin.RV_upper);
+            parse_interval(ep_str, bin.ep_lower_bound, bin.ep_upper_bound);
+            parse_interval(rv_str, bin.rv_lower_bound, bin.rv_upper_bound);
             bin.query_count = std::stoi(qc_str);
 
             std::stringstream ss(curve_str);

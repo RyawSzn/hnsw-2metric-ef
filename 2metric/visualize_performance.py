@@ -103,16 +103,16 @@ elif "curves" in ldf.columns:
     ldf["ef"] = parsed[0].astype(int)
     ldf["actual_recall"] = parsed[1].astype(float)
 
-ldf["d_ep_sort"] = ldf["d_ep_bin"].apply(extract_lower)
-ldf["RV_sort"] = ldf["RV_bin"].apply(extract_lower)
-ldf = ldf.sort_values(["d_ep_sort", "RV_sort"])
-sorted_ep = sorted(ldf["d_ep_bin"].unique(), key=extract_lower)
-sorted_rv = sorted(ldf["RV_bin"].unique(), key=extract_lower)
-pivot_ef = ldf.pivot(index="d_ep_bin", columns="RV_bin", values="ef").reindex(
+ldf["entry_point_dist_sort"] = ldf["entry_point_dist_bin"].apply(extract_lower)
+ldf["RV_sort"] = ldf["revisit_bin"].apply(extract_lower)
+ldf = ldf.sort_values(["entry_point_dist_sort", "RV_sort"])
+sorted_ep = sorted(ldf["entry_point_dist_bin"].unique(), key=extract_lower)
+sorted_rv = sorted(ldf["revisit_bin"].unique(), key=extract_lower)
+pivot_ef = ldf.pivot(index="entry_point_dist_bin", columns="revisit_bin", values="ef").reindex(
     index=sorted_ep, columns=sorted_rv
 )
 pivot_recall = ldf.pivot(
-    index="d_ep_bin", columns="RV_bin", values="actual_recall"
+    index="entry_point_dist_bin", columns="revisit_bin", values="actual_recall"
 ).reindex(index=sorted_ep, columns=sorted_rv)
 
 
@@ -157,9 +157,9 @@ sns.heatmap(
 )
 dark_ax(
     ax_he,
-    "Lookup Table — Assigned EF per (d_ep, RV) Bin",
-    "RV_Rank Interval",
-    "d_ep Interval",
+    "Lookup Table — Assigned EF per (entry_point_dist, RV) Bin",
+    "revisit_rank Interval",
+    "entry_point_dist Interval",
 )
 ax_he.set_xticklabels(ax_he.get_xticklabels(), rotation=45, ha="right", fontsize=6)
 ax_he.set_yticklabels(ax_he.get_yticklabels(), rotation=0, fontsize=6)
@@ -184,8 +184,8 @@ sns.heatmap(
 dark_ax(
     ax_hr,
     "Lookup Table — Actual Recall Achieved per Bin",
-    "RV_Rank Interval",
-    "d_ep Interval",
+    "revisit_rank Interval",
+    "entry_point_dist Interval",
 )
 ax_hr.set_xticklabels(ax_hr.get_xticklabels(), rotation=45, ha="right", fontsize=6)
 ax_hr.set_yticklabels(ax_hr.get_yticklabels(), rotation=0, fontsize=6)
@@ -361,9 +361,9 @@ dark_ax(
 )
 ax_rat.legend(fontsize=9, facecolor="#222233", labelcolor="white", edgecolor="#555566")
 
-# RV_rank vs error scatter
+# revisit_rank vs error scatter
 sc2 = ax_rv.scatter(
-    cdf["RV_rank"],
+    cdf["revisit_rank"],
     cdf["error"],
     c=np.log(cdf["true_ef"].clip(lower=1)),
     cmap="plasma",
@@ -377,14 +377,14 @@ cb2.set_label("log(true_ef)", color="white")
 cb2.ax.tick_params(colors="white")
 dark_ax(
     ax_rv,
-    "Prediction Error vs RV_Rank\n(color = log true_ef)",
-    "RV_Rank",
+    "Prediction Error vs revisit_rank\n(color = log true_ef)",
+    "revisit_rank",
     "error (2metric − true)",
 )
 
-# d_ep vs error scatter
+# entry_point_dist vs error scatter
 sc3 = ax_rc.scatter(
-    cdf["d_ep"],
+    cdf["entry_point_dist"],
     cdf["error"],
     c=np.log(cdf["true_ef"].clip(lower=1)),
     cmap="plasma",
@@ -398,8 +398,8 @@ cb3.set_label("log(true_ef)", color="white")
 cb3.ax.tick_params(colors="white")
 dark_ax(
     ax_rc,
-    "Prediction Error vs d_ep\n(color = log true_ef)",
-    "d_ep",
+    "Prediction Error vs entry_point_dist\n(color = log true_ef)",
+    "entry_point_dist",
     "error (2metric − true)",
 )
 
