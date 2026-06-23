@@ -1413,6 +1413,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
             std::vector<std::pair<dist_t, tableint>>,
             std::greater<std::pair<dist_t, tableint>>
         > probe_frontier,
+        const std::vector<std::pair<dist_t, tableint>>& probe_discarded,
         VisitedList* probe_vl,
         vl_type probe_vl_tag,
         const void* query_data,
@@ -1444,17 +1445,37 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
             ? std::numeric_limits<dist_t>::max()
             : top_candidates.top().first;
 
-        // candidate_set: min-heap (best/nearest on top) — reuse W_d frontier directly.
-        // probe_frontier is already a min-heap with std::greater, which is exactly
-        // the candidate_set convention used in searchBaseLayerST.
+        vl_type* visited_array = probe_vl->mass;
+        vl_type visited_tag    = probe_vl_tag;
+
+        // Flatten the frontier to build the candidate_set in O(N) instead of O(N log N)
+        std::vector<std::pair<dist_t, tableint>> cset_storage;
+        cset_storage.reserve(probe_frontier.size() + probe_discarded.size());
+
+        while (!probe_frontier.empty()) {
+            cset_storage.push_back(probe_frontier.top());
+            probe_frontier.pop();
+        }
+
+        // Re-integrate nodes that were evaluated during the probe but discarded because they were > ef_probe_cap.
+        for (const auto& p : probe_discarded) {
+            dist_t dist = p.first;
+            tableint candidate_id = p.second;
+            if (top_candidates.size() < ef_lookup || lowerBound > dist) {
+                cset_storage.push_back({dist, candidate_id});
+                if (!isMarkedDeleted(candidate_id)) {
+                    top_candidates.emplace(dist, candidate_id);
+                }
+                while (top_candidates.size() > ef_lookup) top_candidates.pop();
+                if (!top_candidates.empty()) lowerBound = top_candidates.top().first;
+            }
+        }
+
         std::priority_queue<
             std::pair<dist_t, tableint>,
             std::vector<std::pair<dist_t, tableint>>,
             std::greater<std::pair<dist_t, tableint>>
-        > candidate_set = std::move(probe_frontier);
-
-        vl_type* visited_array = probe_vl->mass;
-        vl_type visited_tag    = probe_vl_tag;
+        > candidate_set(std::greater<std::pair<dist_t, tableint>>{}, std::move(cset_storage));
 
         while (!candidate_set.empty()) {
             std::pair<dist_t, tableint> current_node_pair = candidate_set.top();
@@ -1467,8 +1488,21 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
             int* data = (int*)get_linklist0(current_node_id);
             size_t size = getListCount((linklistsizeint*)data);
 
+#ifdef USE_SSE
+            _mm_prefetch((char *) (visited_array + *(data + 1)), _MM_HINT_T0);
+            _mm_prefetch((char *) (visited_array + *(data + 1) + 64), _MM_HINT_T0);
+            _mm_prefetch(data_level0_memory_ + (*(data + 1)) * size_data_per_element_ + offsetData_, _MM_HINT_T0);
+            _mm_prefetch((char *) (data + 2), _MM_HINT_T0);
+#endif
+
             for (size_t j = 1; j <= size; j++) {
                 int candidate_id = *(data + j);
+
+#ifdef USE_SSE
+                _mm_prefetch((char *) (visited_array + *(data + j + 1)), _MM_HINT_T0);
+                _mm_prefetch(data_level0_memory_ + (*(data + j + 1)) * size_data_per_element_ + offsetData_, _MM_HINT_T0);
+#endif
+
                 if (visited_array[candidate_id] == visited_tag) continue;
                 visited_array[candidate_id] = visited_tag;
 
@@ -1477,6 +1511,10 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
 
                 if (top_candidates.size() < ef_lookup || lowerBound > dist) {
                     candidate_set.emplace(dist, candidate_id);
+
+#ifdef USE_SSE
+                    _mm_prefetch(data_level0_memory_ + candidate_set.top().second * size_data_per_element_ + offsetLevel0_, _MM_HINT_T0);
+#endif
 
                     if (!isMarkedDeleted(candidate_id)) {
                         top_candidates.emplace(dist, candidate_id);

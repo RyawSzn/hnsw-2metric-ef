@@ -34,6 +34,9 @@ struct ProbeState {
         std::greater<std::pair<float, hnswlib::tableint>>
     > candidate_frontier;
 
+    // Nodes evaluated during probe but discarded because they were worse than ef_probe_cap
+    std::vector<std::pair<float, hnswlib::tableint>> discarded_nodes;
+
     // Borrowed from visited_list_pool_. Ownership transfers to searchKnnFromProbeState.
     hnswlib::VisitedList* vl{nullptr};
     hnswlib::vl_type vl_tag{0};
@@ -47,7 +50,7 @@ public:
         hnswlib::HierarchicalNSW<float>* alg_hnsw,
         const float* query,
         const Eigen::RowVectorXf& global_mean,
-        int ef_probe_cap = 128,
+        int ef_probe_cap = 32,
         float gamma = 16.0f
     ) {
         int L = alg_hnsw->maxlevel_;
