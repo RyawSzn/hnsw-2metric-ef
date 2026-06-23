@@ -1,3 +1,4 @@
+// ada-ef
 #pragma once
 
 #include "distribution.h"
@@ -422,14 +423,14 @@ namespace hnswdis
         int numThreads = std::max(1u, std::thread::hardware_concurrency() / 4);
         omp_set_num_threads(numThreads);
 
-        size_t batch_size = 50; 
+        size_t batch_size = 50;
 
         auto start_all = std::chrono::high_resolution_clock::now();
 
         for (size_t batch_start = 0; batch_start < totalQueries; batch_start += batch_size) {
             size_t current_batch_size = std::min(batch_size, totalQueries - batch_start);
             MatrixXf current_query_batch = query_vectors.middleRows(batch_start, current_batch_size);
-            
+
             MatrixXf distances = current_query_batch * data_vectors.transpose();
 
 #pragma omp parallel for schedule(static)
@@ -468,7 +469,7 @@ namespace hnswdis
                 }
             }
         }
-        
+
         auto end_all = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_all - start_all);
         std::cout << "Ground truth computed in " << duration.count() << " ms using " << numThreads << " threads." << std::endl;
@@ -494,13 +495,13 @@ namespace hnswdis
 
         int numThreads = std::max(1u, std::thread::hardware_concurrency() / 4);
         omp_set_num_threads(numThreads);
-        
-        size_t batch_size = 50; 
+
+        size_t batch_size = 50;
 
         for (size_t batch_start = 0; batch_start < totalQueries; batch_start += batch_size) {
             size_t current_batch_size = std::min(batch_size, totalQueries - batch_start);
             MatrixXf current_query_batch = query_vectors.middleRows(batch_start, current_batch_size);
-            
+
             MatrixXf distances = current_query_batch * data_vectors.transpose();
 
 #pragma omp parallel for schedule(static)

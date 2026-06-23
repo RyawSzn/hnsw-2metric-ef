@@ -1,3 +1,4 @@
+// hnswlib
 #pragma once
 #include "hnswlib.h"
 
@@ -158,7 +159,7 @@ InnerProductSIMD16ExtAVX512(const void *pVect1v, const void *pVect2v, const void
     __m512 sum512 = _mm512_set1_ps(0);
 
     size_t loop = qty16 / 4;
-    
+
     while (loop--) {
         __m512 v1 = _mm512_loadu_ps(pVect1);
         __m512 v2 = _mm512_loadu_ps(pVect2);

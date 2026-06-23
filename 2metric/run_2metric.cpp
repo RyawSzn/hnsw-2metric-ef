@@ -42,8 +42,7 @@ int main(int argc, char** argv) {
                   << "  --generate_table        Force re-generation of the lookup table\n"
                   << "  --ep_bins <int>         Number of relative_contrast bins (default: 32)\n"
                   << "  --rv_bins <int>         Number of RV bins (default: 32)\n"
-                  << "  --sample_size <int>     Queries to sample for table generation (default: 5000)\n"
-                  << "  --stateful              Use stateful probe to reuse W/W_d (default: false)\n";
+                  << "  --sample_size <int>     Queries to sample for table generation (default: 5000)\n";
         return 0;
     }
 
@@ -56,7 +55,6 @@ int main(int argc, char** argv) {
     int entry_point_bins = std::stoi(get_cmd_option(argv, argv + argc, "--ep_bins", "32"));
     int revisit_bins = std::stoi(get_cmd_option(argv, argv + argc, "--rv_bins", "32"));
     int sample_size = std::stoi(get_cmd_option(argv, argv + argc, "--sample_size", "5000"));
-    bool use_stateful = cmd_option_exists(argv, argv + argc, "--stateful");
 
     // Auto-resolve lookup CSV name to match Goal 1
     const char* root_env = std::getenv("EXPERIMENTS_ROOT");
@@ -118,41 +116,21 @@ int main(int argc, char** argv) {
     std::vector<std::vector<size_t>> result(nq, std::vector<size_t>(k, 0));
     std::vector<int> efs_used(nq);
 
-    std::cout << "Starting 2metric adaptive search... (Stateful: " << (use_stateful ? "YES" : "NO") << ")\n";
+    std::cout << "Starting 2metric adaptive search...\n";
     auto start_time = std::chrono::high_resolution_clock::now();
 
     for (int i = 0; i < nq; ++i) {
         const float* q_ptr = query_vectors.row(i).data();
 
-        std::priority_queue<std::pair<float, labeltype>> pq;
+        auto res = Estimator2Metric::probe_query(alg_hnsw, q_ptr, global_mean, 32, 15.0f);
 
-        if (use_stateful) {
-            auto state = Estimator2Metric::probe_with_state(alg_hnsw, q_ptr, global_mean, 32, 15.0f);
+        int dyn_ef = std::max(lookup.get_ef(res.entry_point_dist, res.revisit_rank), table_avg_ef);
+        if (dyn_ef < static_cast<int>(k)) dyn_ef = static_cast<int>(k);
+        if (dyn_ef > max_ef) dyn_ef = max_ef;
+        efs_used[i] = dyn_ef;
 
-            int dyn_ef = std::max(lookup.get_ef(state.entry_point_dist, state.revisit_rank), table_avg_ef);
-            if (dyn_ef < static_cast<int>(k)) dyn_ef = static_cast<int>(k);
-            if (dyn_ef > max_ef) dyn_ef = max_ef;
-            efs_used[i] = dyn_ef;
-
-            pq = alg_hnsw->searchKnnFromProbeState(
-                std::move(state.top_candidates),
-                std::move(state.candidate_frontier),
-                state.discarded_nodes,
-                state.vl,
-                state.vl_tag,
-                q_ptr, k, static_cast<size_t>(dyn_ef)
-            );
-        } else {
-            auto res = Estimator2Metric::probe_query(alg_hnsw, q_ptr, global_mean, 32, 15.0f);
-
-            int dyn_ef = std::max(lookup.get_ef(res.entry_point_dist, res.revisit_rank), table_avg_ef);
-            if (dyn_ef < static_cast<int>(k)) dyn_ef = static_cast<int>(k);
-            if (dyn_ef > max_ef) dyn_ef = max_ef;
-            efs_used[i] = dyn_ef;
-
-            alg_hnsw->setEf(dyn_ef);
-            pq = alg_hnsw->searchKnn(q_ptr, k);
-        }
+        // Use the fast-path stateless resume
+        std::priority_queue<std::pair<float, labeltype>> pq = alg_hnsw->searchKnnFromEp(res.ep_id, q_ptr, k, static_cast<size_t>(dyn_ef));
 
         int count = pq.size();
         while (!pq.empty()) {
