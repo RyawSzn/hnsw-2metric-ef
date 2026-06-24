@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < nq; ++i) {
         const float* q_ptr = query_vectors.row(i).data();
 
-        auto res = Estimator2Metric::probe_query(alg_hnsw, q_ptr, global_mean, 32, 15.0f);
+        auto res = Estimator2Metric::probe_query(alg_hnsw, q_ptr, global_mean, 32, 16.0f);
 
         int dyn_ef = std::max(lookup.get_ef(res.entry_point_dist, res.revisit_rank), table_avg_ef);
         if (dyn_ef < static_cast<int>(k)) dyn_ef = static_cast<int>(k);
@@ -196,8 +196,8 @@ int main(int argc, char** argv) {
     adaptive_ef_analysis_2metric(dataset, efs_used);
 
     // Call baseline search to compare directly to constant EF curves
-    // std::cout << "\nRunning Baseline Search for Comparison (up to max_ef=" << max_ef << ")...\n";
-    // baseline_search(dataset, repeat, *alg_hnsw, query_vectors, ground_truth, k, max_ef);
+    std::cout << "\nRunning Baseline Search for Comparison (up to max_ef=" << max_ef << ")...\n";
+    baseline_search(dataset, repeat, *alg_hnsw, query_vectors, ground_truth, k, max_ef);
 
     delete alg_hnsw;
     delete space;

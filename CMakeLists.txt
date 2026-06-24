@@ -70,15 +70,15 @@ target_link_libraries(run_ada PRIVATE
     ${HDF5_LIBRARIES}       # Link libhdf5.so
 )
 
-add_executable(reader research/reader.cpp)
-target_include_directories(reader PRIVATE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(reader PRIVATE
-    hnswlib
-    Eigen3::Eigen
-    Boost::boost
-    ${HDF5_CXX_LIBRARIES}
-    ${HDF5_LIBRARIES}
-)
+# add_executable(reader research/reader.cpp)
+# target_include_directories(reader PRIVATE ${HDF5_INCLUDE_DIRS})
+# target_link_libraries(reader PRIVATE
+#     hnswlib
+#     Eigen3::Eigen
+#     Boost::boost
+#     ${HDF5_CXX_LIBRARIES}
+#     ${HDF5_LIBRARIES}
+# )
 
 add_executable(run_2metric 2metric/run_2metric.cpp)
 target_include_directories(run_2metric PRIVATE ${HDF5_INCLUDE_DIRS})
@@ -87,3 +87,9 @@ target_link_libraries(run_2metric PRIVATE hnswlib Eigen3::Eigen Boost::boost ${H
 add_executable(compare_ef 2metric/compare/compare_ef.cpp)
 target_include_directories(compare_ef PRIVATE ${HDF5_INCLUDE_DIRS})
 target_link_libraries(compare_ef PRIVATE hnswlib Eigen3::Eigen Boost::boost ${HDF5_CXX_LIBRARIES} ${HDF5_LIBRARIES})
+# add_executable(compute_corr2 research/compute_corr2.cpp)
+# target_include_directories(compute_corr2 PRIVATE ${HDF5_INCLUDE_DIRS})
+# target_link_libraries(compute_corr2 PRIVATE hnswlib Eigen3::Eigen Boost::boost ${HDF5_CXX_LIBRARIES} ${HDF5_LIBRARIES})
+add_executable(compute_corr research/compute_corr.cpp)
+target_include_directories(compute_corr PRIVATE ${HDF5_INCLUDE_DIRS})
+target_link_libraries(compute_corr PRIVATE hnswlib Eigen3::Eigen Boost::boost ${HDF5_CXX_LIBRARIES} ${HDF5_LIBRARIES})
