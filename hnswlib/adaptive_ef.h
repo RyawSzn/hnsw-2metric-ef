@@ -1222,6 +1222,10 @@ namespace hnswdis
                 {
                     while (expected_recall - latest_agg_recall > 1e-4f) // improve the recall for quries with lower recall
                     {
+                        if (recall_diff < 1e-5f) {
+                            std::cout << "Recall diff too small initially, break." << std::endl;
+                            break;
+                        }
                         ef_diff = std::max((int)(ef_diff * (expected_recall - latest_agg_recall) / recall_diff), (int)(k * 0.5));
                         int ef = latest_ef + ef_diff;
 
@@ -1292,7 +1296,7 @@ namespace hnswdis
                         latest_ef = ef;
                         latest_agg_recall = agg_recall;
 
-                        if (recall_diff < 1e-5f && latest_ef >= expected_recall - 1e-3f)
+                        if (recall_diff < 1e-5f)
                         {
                             std::cout << "Recall diff is too small, break." << std::endl;
                             break;

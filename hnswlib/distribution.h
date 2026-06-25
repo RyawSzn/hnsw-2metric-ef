@@ -620,7 +620,7 @@ namespace hnswdis
             std::cout << "Start creating ApproximatedScoreCalculator" << std::endl;
 
             // Old distribution init removed
-            
+
             std::cout << "ApproximatedScoreCalculator created" << std::endl;
         }
 
