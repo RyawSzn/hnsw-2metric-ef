@@ -11,7 +11,7 @@
 #include <list>
 #include <memory>
 
-#include "distribution.h"
+#include "estimator.h"
 #include "sketch.h"
 
 namespace hnswlib {

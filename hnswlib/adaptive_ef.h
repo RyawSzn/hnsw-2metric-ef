@@ -1,7 +1,7 @@
 // ada-ef
 #pragma once
 
-#include "distribution.h"
+#include "estimator.h"
 #include "hnswalg.h"
 #include <omp.h>
 #include <thread>
@@ -21,7 +21,6 @@ namespace hnswdis
         std::vector<std::pair<std::vector<size_t>, float>> result;
         result.reserve(query_vectors.rows());
 
-        auto start_time = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < query_vectors.rows(); ++i)
         {
             auto ret = alg_hnsw.adaptiveSearchKnn(
@@ -37,9 +36,6 @@ namespace hnswdis
             }
             result.emplace_back(std::move(labels), std::move(ret.second));
         }
-        auto end_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-        std::cout << "Search time: " << duration.count() << " ms" << std::endl;
 
         return result;
     }
@@ -53,8 +49,6 @@ namespace hnswdis
         const float quantile_step,
         const size_t statics_length)
     {
-
-        std::shared_ptr<hnswdis::Estimator> estimator = hnswdis::init_estimator(metric, data_vectors);
         hnswdis::ApproximatedScoreCalculator score_cal(quantile_step);
 
         return hnsw_search_and_score(alg_hnsw, query_vectors, data_vectors, score_cal, k, statics_length);
@@ -67,7 +61,6 @@ namespace hnswdis
     {
         std::vector<std::vector<size_t>> result;
         result.reserve(query_vectors.rows());
-        auto start_time = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < query_vectors.rows(); i++)
         {
             auto ret = alg_hnsw.searchKnn(
@@ -83,9 +76,6 @@ namespace hnswdis
 
             result.push_back(std::move(labels));
         }
-        auto end_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-        std::cout << "HNSW Search time: " << duration.count() << " ms" << std::endl;
         return result;
     }
 
@@ -201,8 +191,6 @@ namespace hnswdis
         std::vector<std::vector<int>> global_results;
         global_results.resize(query_vectors.rows());
 
-        auto start = std::chrono::high_resolution_clock::now();
-
         // multi-threaded
         ParallelFor(0, query_vectors.rows(), num_t, [&](size_t i, size_t threadId)
                     {
@@ -215,10 +203,6 @@ namespace hnswdis
                             ret.pop();
                         }
                         global_results[i] = std::move(local_results); });
-
-        auto end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        std::cout << "Ground truth computed in " << duration.count() << " ms" << std::endl;
 
         MatrixXi ground_truth(query_vectors.rows(), k);
         for (size_t i = 0; i < query_vectors.rows(); i++)
@@ -237,7 +221,6 @@ namespace hnswdis
         const std::string &metric,
         const int k)
     {
-        auto start = std::chrono::high_resolution_clock::now();
 
         std::size_t numThreads = std::max(1u, std::thread::hardware_concurrency() / 4);
 
@@ -327,10 +310,6 @@ namespace hnswdis
             std::rethrow_exception(lastException);
         }
 
-        auto end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        std::cout << "Ground truth computed in " << duration.count() << " ms" << std::endl;
-
         return ground_truth;
     }
 
@@ -342,8 +321,6 @@ namespace hnswdis
         const std::string &metric,
         const int k)
     {
-        auto start = std::chrono::high_resolution_clock::now();
-
         size_t totalQueries = query_vectors.rows();
         size_t num_elements = data_vectors.rows();
         size_t dim = data_vectors.cols();
@@ -397,10 +374,6 @@ namespace hnswdis
             }
         }
 
-        auto end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        std::cout << "Ground truth computed in " << duration.count() << " ms using " << numThreads << " threads." << std::endl;
-
         return ground_truth;
     }
 
@@ -424,8 +397,6 @@ namespace hnswdis
         omp_set_num_threads(numThreads);
 
         size_t batch_size = 50;
-
-        auto start_all = std::chrono::high_resolution_clock::now();
 
         for (size_t batch_start = 0; batch_start < totalQueries; batch_start += batch_size) {
             size_t current_batch_size = std::min(batch_size, totalQueries - batch_start);
@@ -469,10 +440,6 @@ namespace hnswdis
                 }
             }
         }
-
-        auto end_all = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_all - start_all);
-        std::cout << "Ground truth computed in " << duration.count() << " ms using " << numThreads << " threads." << std::endl;
 
         return ground_truth;
     }
@@ -924,7 +891,6 @@ namespace hnswdis
             std::shared_ptr<hnswdis::MatrixXf> query_vectors = hnswdis::sample_data(*data_vectors, sample_size);
             MatrixXi ground_truth = compute_ground_truth_batch_parallel4(*query_vectors, *data_vectors, metric, k);
 
-            std::shared_ptr<hnswdis::Estimator> estimator = hnswdis::init_estimator(metric, *data_vectors);
             hnswdis::ApproximatedScoreCalculator score_cal(quantile_step);
 
             init(alg_hnsw,
@@ -1181,13 +1147,7 @@ namespace hnswdis
                   const int num_bins
                 )
         {
-            auto start = std::chrono::high_resolution_clock::now();
-
-
             hnswdis::ApproximatedScoreCalculator score_cal(quantile_step, weight_decay_type, num_bins);
-            auto end = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-            std::cout << "Estimator initialized in " << duration.count() << " ms" << std::endl;
 
             size_t first_ef = k;
             size_t second_ef = static_cast<size_t>(1.5 * first_ef);
