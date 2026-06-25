@@ -2719,36 +2719,6 @@
     "ast_hash": "cec3479338d06446a329ff0bf9948e3a",
     "semantic_hash": "cec3479338d06446a329ff0bf9948e3a"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/demo_lid/demo.cpp": {
-    "mtime": 1781330904.0,
-    "ast_hash": "ea4fd6636429be895e244dd855bacd3f",
-    "semantic_hash": "ea4fd6636429be895e244dd855bacd3f"
-  },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/demo_lid/difficulty.h": {
-    "mtime": 1781330904.0,
-    "ast_hash": "b985767266d20675596050d2c8ad5f45",
-    "semantic_hash": "b985767266d20675596050d2c8ad5f45"
-  },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/demo_lid/difficulty_matrix.h": {
-    "mtime": 1781330904.0,
-    "ast_hash": "40e8cec1e43953bcbffbb94da0f09ccf",
-    "semantic_hash": "40e8cec1e43953bcbffbb94da0f09ccf"
-  },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/demo_lid/percentile.h": {
-    "mtime": 1781330904.0,
-    "ast_hash": "904063b3200d1f0bd8dbe3df71ae7437",
-    "semantic_hash": "904063b3200d1f0bd8dbe3df71ae7437"
-  },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/demo_lid/predictor.h": {
-    "mtime": 1781330904.0,
-    "ast_hash": "64f3106b0b47ba7281b77853517789c7",
-    "semantic_hash": "64f3106b0b47ba7281b77853517789c7"
-  },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/demo_lid/search_trace.h": {
-    "mtime": 1781330904.0,
-    "ast_hash": "f5b7a4ffb10161a199bf9c2f25d51a60",
-    "semantic_hash": "f5b7a4ffb10161a199bf9c2f25d51a60"
-  },
   "/home/ryawszn/dev/cpp/hnsw-2metric-ef/examples/cpp/example_epsilon_search.cpp": {
     "mtime": 1780316731.732359,
     "ast_hash": "3fff53df2905ac030d5b26e02e1b2abc",
@@ -2825,99 +2795,64 @@
     "semantic_hash": "91376ca56333857763b844a522d9879a"
   },
   "/home/ryawszn/dev/cpp/hnsw-2metric-ef/experiments_driver/run.cpp": {
-    "mtime": 1782029621.6148055,
-    "ast_hash": "be6fe92fdfda4ac87a614542c8a0ef93",
-    "semantic_hash": "be6fe92fdfda4ac87a614542c8a0ef93"
-  },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/experiments_driver/run_lid.cpp": {
-    "mtime": 1781273197.5731506,
-    "ast_hash": "015948dc8b833ed995e5a8f29e544a3a",
-    "semantic_hash": "015948dc8b833ed995e5a8f29e544a3a"
+    "mtime": 1782312045.156808,
+    "ast_hash": "a7512de65cfddac0225a6c86b8025faa",
+    "semantic_hash": "a7512de65cfddac0225a6c86b8025faa"
   },
   "/home/ryawszn/dev/cpp/hnsw-2metric-ef/experiments_driver/util.h": {
-    "mtime": 1781282799.17354,
+    "mtime": 1782228296.4238791,
     "ast_hash": "5046810fa26998f2c3f4d6e7818d2f8f",
     "semantic_hash": "5046810fa26998f2c3f4d6e7818d2f8f"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/fix_returns.py": {
-    "mtime": 1781164922.2122474,
-    "ast_hash": "b217846261beb06d195f64d2badad263",
-    "semantic_hash": "b217846261beb06d195f64d2badad263"
-  },
   "/home/ryawszn/dev/cpp/hnsw-2metric-ef/hnswlib/adaptive_ef.h": {
-    "mtime": 1781331647.6043198,
-    "ast_hash": "6e9fb642744cff5dd8378c8b2fd981d3",
-    "semantic_hash": "6e9fb642744cff5dd8378c8b2fd981d3"
+    "mtime": 1782281566.1005652,
+    "ast_hash": "c697389cb02fcce81ebfdfb00d9c306c",
+    "semantic_hash": "c697389cb02fcce81ebfdfb00d9c306c"
   },
   "/home/ryawszn/dev/cpp/hnsw-2metric-ef/hnswlib/bruteforce.h": {
-    "mtime": 1780316731.732359,
-    "ast_hash": "2aa6192c2a66a3deab0cf15d26c99012",
-    "semantic_hash": "2aa6192c2a66a3deab0cf15d26c99012"
+    "mtime": 1782281566.1005652,
+    "ast_hash": "dbb8a38c5b1dd3c849512e00d900087d",
+    "semantic_hash": "dbb8a38c5b1dd3c849512e00d900087d"
   },
   "/home/ryawszn/dev/cpp/hnsw-2metric-ef/hnswlib/distribution.h": {
-    "mtime": 1781170809.7830675,
-    "ast_hash": "619755df91712b45c3a810b7916cd566",
-    "semantic_hash": "619755df91712b45c3a810b7916cd566"
-  },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/hnswlib/hnsw_lid_search.h": {
-    "mtime": 1782029621.6148055,
-    "ast_hash": "831045d7c87cc7bb8da332746d30321d",
-    "semantic_hash": "831045d7c87cc7bb8da332746d30321d"
+    "mtime": 1782281566.1005652,
+    "ast_hash": "9d037f900dd8afa7457217582d6c864a",
+    "semantic_hash": "9d037f900dd8afa7457217582d6c864a"
   },
   "/home/ryawszn/dev/cpp/hnsw-2metric-ef/hnswlib/hnswalg.h": {
-    "mtime": 1781253732.6219504,
-    "ast_hash": "f0f08193b2de10c4ac9f712ed844deb2",
-    "semantic_hash": "f0f08193b2de10c4ac9f712ed844deb2"
+    "mtime": 1782395546.4298291,
+    "ast_hash": "85f2822c4fef9d6be3abd5abf1f8a5fa",
+    "semantic_hash": "85f2822c4fef9d6be3abd5abf1f8a5fa"
   },
   "/home/ryawszn/dev/cpp/hnsw-2metric-ef/hnswlib/hnswlib.h": {
-    "mtime": 1780316731.732359,
-    "ast_hash": "25fe4af27d146e78e3ff878023f14830",
-    "semantic_hash": "25fe4af27d146e78e3ff878023f14830"
-  },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/hnswlib/lid_2d_calibrator.h": {
-    "mtime": 1781327415.581796,
-    "ast_hash": "d20057664fcaa78d05b1a04d24c83fb1",
-    "semantic_hash": "d20057664fcaa78d05b1a04d24c83fb1"
-  },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/hnswlib/lid_2d_table.h": {
-    "mtime": 1782029621.6148055,
-    "ast_hash": "71040bb1e7c312210dcfda7ac5814eed",
-    "semantic_hash": "71040bb1e7c312210dcfda7ac5814eed"
-  },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/hnswlib/lid_calibrator.h": {
-    "mtime": 1781260770.71659,
-    "ast_hash": "e9c572205d7def75b83dfa17196527c1",
-    "semantic_hash": "e9c572205d7def75b83dfa17196527c1"
-  },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/hnswlib/lid_estimator.h": {
-    "mtime": 1781329542.106903,
-    "ast_hash": "1a5710ff55c04c8490ebda254024f579",
-    "semantic_hash": "1a5710ff55c04c8490ebda254024f579"
+    "mtime": 1782281566.1005652,
+    "ast_hash": "17ee5e7e6cdf277fa048a4196ae574b6",
+    "semantic_hash": "17ee5e7e6cdf277fa048a4196ae574b6"
   },
   "/home/ryawszn/dev/cpp/hnsw-2metric-ef/hnswlib/sketch.h": {
-    "mtime": 1781166795.292545,
-    "ast_hash": "84192389b6c576c3dc01696aa1b55ec4",
-    "semantic_hash": "84192389b6c576c3dc01696aa1b55ec4"
+    "mtime": 1782281566.1005652,
+    "ast_hash": "8993dcd5b0da556462565d06c3e75975",
+    "semantic_hash": "8993dcd5b0da556462565d06c3e75975"
   },
   "/home/ryawszn/dev/cpp/hnsw-2metric-ef/hnswlib/space_ip.h": {
-    "mtime": 1780316731.732359,
-    "ast_hash": "8e89c8cd816e9f0f74af5167aaac877e",
-    "semantic_hash": "8e89c8cd816e9f0f74af5167aaac877e"
+    "mtime": 1782281566.1041653,
+    "ast_hash": "66f380193ab7fda18bb3a88b64078913",
+    "semantic_hash": "66f380193ab7fda18bb3a88b64078913"
   },
   "/home/ryawszn/dev/cpp/hnsw-2metric-ef/hnswlib/space_l2.h": {
-    "mtime": 1781157057.516571,
-    "ast_hash": "7d37302b6611e56c91bdbdf0c41d9abb",
-    "semantic_hash": "7d37302b6611e56c91bdbdf0c41d9abb"
+    "mtime": 1782281566.1041653,
+    "ast_hash": "413140f571b4c572b50b17769a62362e",
+    "semantic_hash": "413140f571b4c572b50b17769a62362e"
   },
   "/home/ryawszn/dev/cpp/hnsw-2metric-ef/hnswlib/stop_condition.h": {
-    "mtime": 1780316731.732359,
-    "ast_hash": "33a8cb7c50123a93e6ba81c83018ecd0",
-    "semantic_hash": "33a8cb7c50123a93e6ba81c83018ecd0"
+    "mtime": 1782281566.1041653,
+    "ast_hash": "dcc5c5515b6b717dbcff6bd01307e310",
+    "semantic_hash": "dcc5c5515b6b717dbcff6bd01307e310"
   },
   "/home/ryawszn/dev/cpp/hnsw-2metric-ef/hnswlib/visited_list_pool.h": {
-    "mtime": 1780316731.732359,
-    "ast_hash": "e273c51ee9c307117ed904d3da9cc4e4",
-    "semantic_hash": "e273c51ee9c307117ed904d3da9cc4e4"
+    "mtime": 1782281566.1041653,
+    "ast_hash": "569d0f3cd24120c3f8532cb71265167e",
+    "semantic_hash": "569d0f3cd24120c3f8532cb71265167e"
   },
   "/home/ryawszn/dev/cpp/hnsw-2metric-ef/python_bindings/LazyIndex.py": {
     "mtime": 1780316731.732359,
@@ -2944,26 +2879,6 @@
     "ast_hash": "fb6fcf13cced9a71fad3098e8878fee4",
     "semantic_hash": "fb6fcf13cced9a71fad3098e8878fee4"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/lookup_dynamic.cpp": {
-    "mtime": 1782029621.6364055,
-    "ast_hash": "43abc11968d95a00c59163efe3f0a5ed",
-    "semantic_hash": "43abc11968d95a00c59163efe3f0a5ed"
-  },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/reader.cpp": {
-    "mtime": 1781328954.9754286,
-    "ast_hash": "05d65b8265683a8017e774bf5de73b0f",
-    "semantic_hash": "05d65b8265683a8017e774bf5de73b0f"
-  },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/visualize_dynamic_lookup.py": {
-    "mtime": 1782029621.6364055,
-    "ast_hash": "b2727006fb945f18df7778af64a882f6",
-    "semantic_hash": "b2727006fb945f18df7778af64a882f6"
-  },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/visualize_reader.py": {
-    "mtime": 1781254732.758949,
-    "ast_hash": "65371f4351de550d3ee25259baf85b68",
-    "semantic_hash": "65371f4351de550d3ee25259baf85b68"
-  },
   "/home/ryawszn/dev/cpp/hnsw-2metric-ef/setup.py": {
     "mtime": 1782029743.4509497,
     "ast_hash": "ae10a226952081d67ba6c69c5371bfbd",
@@ -2985,9 +2900,9 @@
     "semantic_hash": "54cb6908e11e985b9eb693abd3f956a8"
   },
   "/home/ryawszn/dev/cpp/hnsw-2metric-ef/CMakeLists.txt": {
-    "mtime": 1782029621.6076055,
-    "ast_hash": "ef101e66361502415fc867b22abbee2a",
-    "semantic_hash": "ef101e66361502415fc867b22abbee2a"
+    "mtime": 1782395731.2738574,
+    "ast_hash": "f19626b9d3fff23eb618ce4436eb5880",
+    "semantic_hash": "f19626b9d3fff23eb618ce4436eb5880"
   },
   "/home/ryawszn/dev/cpp/hnsw-2metric-ef/TESTING_RECALL.md": {
     "mtime": 1780316731.695696,
@@ -3249,209 +3164,659 @@
     "ast_hash": "69fceb2cf4c19f24bf0fcf32a1dbc3cb",
     "semantic_hash": "69fceb2cf4c19f24bf0fcf32a1dbc3cb"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/figures/compare_M_moderators.png": {
-    "mtime": 1781512764.7265635,
-    "ast_hash": "e0048861f7ef2117321db2dcf9b1fe83",
-    "semantic_hash": "e0048861f7ef2117321db2dcf9b1fe83"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/GpuDistance.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "a30d588046168d95f020959f39c519d9",
+    "semantic_hash": "a30d588046168d95f020959f39c519d9"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/figures/deep-image-96-angular_histogram_q0.png": {
-    "mtime": 1781241783.3626194,
-    "ast_hash": "56e79126713b75b09b936294eac3bc1e",
-    "semantic_hash": "56e79126713b75b09b936294eac3bc1e"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/GpuIcmEncoder.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "d5a274815aa6adbaa3a9e835e9352bb9",
+    "semantic_hash": "d5a274815aa6adbaa3a9e835e9352bb9"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/figures/deep-image-96-angular_qq_q0.png": {
-    "mtime": 1781241864.1403797,
-    "ast_hash": "3e879d36507cd3bc15f7797edff62964",
-    "semantic_hash": "3e879d36507cd3bc15f7797edff62964"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/GpuIndex.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "9ba6c580e9694b8628a485ce16561738",
+    "semantic_hash": "9ba6c580e9694b8628a485ce16561738"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/figures/glove-100-angular_histogram_q0.png": {
-    "mtime": 1781240512.1333227,
-    "ast_hash": "6ce6b83175ceeda2368f5329e1235328",
-    "semantic_hash": "6ce6b83175ceeda2368f5329e1235328"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/GpuIndexBinaryFlat.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "bbd031979d140e3dc68350e533126c39",
+    "semantic_hash": "bbd031979d140e3dc68350e533126c39"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/figures/glove-100-angular_qq_q0.png": {
-    "mtime": 1781240521.0282938,
-    "ast_hash": "47305cfb70ac9ff358c23c09f290fd8c",
-    "semantic_hash": "47305cfb70ac9ff358c23c09f290fd8c"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/GpuIndexFlat.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "9d87cadcf744ac0441862bfca0fedd73",
+    "semantic_hash": "9d87cadcf744ac0441862bfca0fedd73"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/figures/lookup_ef_heatmap_20x20.png": {
-    "mtime": 1782029621.6256053,
-    "ast_hash": "e46a9d4895e30fbf076afe2d709892c3",
-    "semantic_hash": "e46a9d4895e30fbf076afe2d709892c3"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/GpuIndexIVF.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "87bb048c3a68538327329508fbf72c93",
+    "semantic_hash": "87bb048c3a68538327329508fbf72c93"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/figures/recall_20x20_heatmap_abs_corr.png": {
-    "mtime": 1782028693.5951161,
-    "ast_hash": "5e4768219b02b831498fb7ad0d56a070",
-    "semantic_hash": "5e4768219b02b831498fb7ad0d56a070"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/GpuIndexIVFFlat.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "80995c9db7803ff37c5cb1bcbb1fcfa6",
+    "semantic_hash": "80995c9db7803ff37c5cb1bcbb1fcfa6"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/figures/sift-128-euclidean_histogram_q0.png": {
-    "mtime": 1781240898.7868376,
-    "ast_hash": "c642f1237aefca72b2b3e6590107afe6",
-    "semantic_hash": "c642f1237aefca72b2b3e6590107afe6"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/GpuIndexIVFPQ.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "b1092aa85a5f813ed91697ce6e1b0024",
+    "semantic_hash": "b1092aa85a5f813ed91697ce6e1b0024"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/figures/sift-128-euclidean_qq_q0.png": {
-    "mtime": 1781240903.0189438,
-    "ast_hash": "352c025091a88bf7ea82c946e0b6cb74",
-    "semantic_hash": "352c025091a88bf7ea82c946e0b6cb74"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/GpuIndexIVFScalarQuantizer.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "bce9d16a4ffd9a773b4bd06a5b519918",
+    "semantic_hash": "bce9d16a4ffd9a773b4bd06a5b519918"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/hardness_diagnostic.cpp": {
-    "mtime": 1782029621.6328053,
-    "ast_hash": "7df27ac5fd2a35bcb7dbdca01614ce89",
-    "semantic_hash": "7df27ac5fd2a35bcb7dbdca01614ce89"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/BinaryDistance.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "5bc70ba97c166dc37b9f3415a4a21fc6",
+    "semantic_hash": "5bc70ba97c166dc37b9f3415a4a21fc6"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/2metric/compare/compare_ef.cpp": {
-    "mtime": 1782029621.6076055,
-    "ast_hash": "2397309385f3818c9c921779a698c5da",
-    "semantic_hash": "2397309385f3818c9c921779a698c5da"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/BinaryDistance.cuh": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "8d2c49633c161dbb458ec610711a7ca2",
+    "semantic_hash": "8d2c49633c161dbb458ec610711a7ca2"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/2metric/estimator.h": {
-    "mtime": 1782029621.6076055,
-    "ast_hash": "0eac0c7002453a021a3c6865b6226ad9",
-    "semantic_hash": "0eac0c7002453a021a3c6865b6226ad9"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/BinaryFlatIndex.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "e085bd8aa7599a71530ecbb031dfda15",
+    "semantic_hash": "e085bd8aa7599a71530ecbb031dfda15"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/2metric/lookuptable.h": {
-    "mtime": 1782029621.6076055,
-    "ast_hash": "3624f043bcc03ddb284e73775d18d9a5",
-    "semantic_hash": "3624f043bcc03ddb284e73775d18d9a5"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/BinaryFlatIndex.cuh": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "d27e3fc881a2e2330418c19e3b411af2",
+    "semantic_hash": "d27e3fc881a2e2330418c19e3b411af2"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/2metric/run_2metric.cpp": {
-    "mtime": 1782029621.6076055,
-    "ast_hash": "99165ca091cd940b696f9d27d7e01a10",
-    "semantic_hash": "99165ca091cd940b696f9d27d7e01a10"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/BroadcastSum.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "ea968b4d3cefd48aa2b47241439c7167",
+    "semantic_hash": "ea968b4d3cefd48aa2b47241439c7167"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/2metric/statistics.h": {
-    "mtime": 1782029621.6076055,
-    "ast_hash": "022134c9fad32b3a9f027f2045b734c6",
-    "semantic_hash": "022134c9fad32b3a9f027f2045b734c6"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/BroadcastSum.cuh": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "11e54c89a6dc6778bcc4a208cd748ef9",
+    "semantic_hash": "11e54c89a6dc6778bcc4a208cd748ef9"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/2metric/table_generator.h": {
-    "mtime": 1782029621.6076055,
-    "ast_hash": "fe4a7fb75692892d02f230d4efc78cdd",
-    "semantic_hash": "fe4a7fb75692892d02f230d4efc78cdd"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/Distance.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "b59b6959c99e7de32cd7d41e914925c4",
+    "semantic_hash": "b59b6959c99e7de32cd7d41e914925c4"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/2metric/visualize_lookup.py": {
-    "mtime": 1782029621.6076055,
-    "ast_hash": "7168af406e7af16c7fa819599b032a83",
-    "semantic_hash": "7168af406e7af16c7fa819599b032a83"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/Distance.cuh": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "3cadcfa63fb587c31c28842df3262cd3",
+    "semantic_hash": "3cadcfa63fb587c31c28842df3262cd3"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/analyze_best_rv.py": {
-    "mtime": 1781769787.4939756,
-    "ast_hash": "9d4420af8fc74bf6b5e58d3bed937f2c",
-    "semantic_hash": "9d4420af8fc74bf6b5e58d3bed937f2c"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/DistanceUtils.cuh": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "99662092ad1592a2f104c54832b6939a",
+    "semantic_hash": "99662092ad1592a2f104c54832b6939a"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/analyze_final_rank.py": {
-    "mtime": 1781772698.3999045,
-    "ast_hash": "3a82a43228230f6a182d689a59485c88",
-    "semantic_hash": "3a82a43228230f6a182d689a59485c88"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/FlatIndex.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "28ccd03c8cb979b7f067c335133bd597",
+    "semantic_hash": "28ccd03c8cb979b7f067c335133bd597"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/analyze_final_rv.py": {
-    "mtime": 1781771757.8947222,
-    "ast_hash": "a1af5ee9ba7c6d0500c5eea7c6676e6f",
-    "semantic_hash": "a1af5ee9ba7c6d0500c5eea7c6676e6f"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/FlatIndex.cuh": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "ba9fd328d44e69df3948c2b1160ed63b",
+    "semantic_hash": "ba9fd328d44e69df3948c2b1160ed63b"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/analyze_finished.py": {
-    "mtime": 1781769114.5765464,
-    "ast_hash": "a923a24fa1074602de8f26e7b4fb975e",
-    "semantic_hash": "a923a24fa1074602de8f26e7b4fb975e"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/GeneralDistance.cuh": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "89f641cab745a7a05f550e5c7e9e5dec",
+    "semantic_hash": "89f641cab745a7a05f550e5c7e9e5dec"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/analyze_gamma.py": {
-    "mtime": 1781766169.944763,
-    "ast_hash": "2c0fad056b4b82222994e3d4abbbf897",
-    "semantic_hash": "2c0fad056b4b82222994e3d4abbbf897"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/GpuScalarQuantizer.cuh": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "9730fb54c7eb20f0acac1acacf536949",
+    "semantic_hash": "9730fb54c7eb20f0acac1acacf536949"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/analyze_hardness.py": {
-    "mtime": 1781715860.0142124,
-    "ast_hash": "7c3e23e6246b8429f0ec6989ae6f00ba",
-    "semantic_hash": "7c3e23e6246b8429f0ec6989ae6f00ba"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IVFAppend.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "cb1a8914d428d73cecdabf66034853f7",
+    "semantic_hash": "cb1a8914d428d73cecdabf66034853f7"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/analyze_hubness.py": {
-    "mtime": 1781771068.9658384,
-    "ast_hash": "4af7c1d1a579cba19328c3aeb5204663",
-    "semantic_hash": "4af7c1d1a579cba19328c3aeb5204663"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IVFAppend.cuh": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "5c04d04fd9e14023d8b8b9ab0debecde",
+    "semantic_hash": "5c04d04fd9e14023d8b8b9ab0debecde"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/analyze_log_all.py": {
-    "mtime": 1781769225.9831588,
-    "ast_hash": "a61d1098ae1021331a8aa6cba894df3b",
-    "semantic_hash": "a61d1098ae1021331a8aa6cba894df3b"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IVFBase.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "9d2996652c4fb21d0092ffd88f75283f",
+    "semantic_hash": "9d2996652c4fb21d0092ffd88f75283f"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/analyze_rank.py": {
-    "mtime": 1781770853.391055,
-    "ast_hash": "d02e69c4d1fa1c2cc45e1c3b0d825839",
-    "semantic_hash": "d02e69c4d1fa1c2cc45e1c3b0d825839"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IVFBase.cuh": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "7645359596334cbd619185c8143fa28a",
+    "semantic_hash": "7645359596334cbd619185c8143fa28a"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/analyze_sweep_rank.py": {
-    "mtime": 1781773461.196473,
-    "ast_hash": "16b686bebc39bd2b414733cc06142897",
-    "semantic_hash": "16b686bebc39bd2b414733cc06142897"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IVFFlat.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "3a1fac70474e634f48b13f76769d9f17",
+    "semantic_hash": "3a1fac70474e634f48b13f76769d9f17"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/analyze_unw.py": {
-    "mtime": 1781770172.2721107,
-    "ast_hash": "899a0b760ce4b05e22eb4cef123804be",
-    "semantic_hash": "899a0b760ce4b05e22eb4cef123804be"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IVFFlat.cuh": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "35e71d02b709e447290cacb124905bcc",
+    "semantic_hash": "35e71d02b709e447290cacb124905bcc"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/simulate_2d_table.py": {
-    "mtime": 1781713587.7928035,
-    "ast_hash": "df58fbec94be3ebe1aad1a43be3406d7",
-    "semantic_hash": "df58fbec94be3ebe1aad1a43be3406d7"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IVFFlatScan.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "4af41a5b3fdbbdf2ac45d3fca7025530",
+    "semantic_hash": "4af41a5b3fdbbdf2ac45d3fca7025530"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/test_all_datasets.py": {
-    "mtime": 1781768606.573804,
-    "ast_hash": "ea2a661f32af9ab50bd678788705af89",
-    "semantic_hash": "ea2a661f32af9ab50bd678788705af89"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IVFFlatScan.cuh": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "b3335cbc67bdff28aa3ca97b2eceba0b",
+    "semantic_hash": "b3335cbc67bdff28aa3ca97b2eceba0b"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/test_all_rv.cpp": {
-    "mtime": 1781771918.3402872,
-    "ast_hash": "53c423cd4f5a063e88dd2e22e46fb2a3",
-    "semantic_hash": "53c423cd4f5a063e88dd2e22e46fb2a3"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IVFInterleaved.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "b6f886f898cebe985cba13c0432b5551",
+    "semantic_hash": "b6f886f898cebe985cba13c0432b5551"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/test_best_rv.cpp": {
-    "mtime": 1781769765.040774,
-    "ast_hash": "194ad3caa7041f36fddb77aab1926183",
-    "semantic_hash": "194ad3caa7041f36fddb77aab1926183"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IVFInterleaved.cuh": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "58bb58a86c2dca2c80682e238ef9cb40",
+    "semantic_hash": "58bb58a86c2dca2c80682e238ef9cb40"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/test_final_rank.cpp": {
-    "mtime": 1781772672.411767,
-    "ast_hash": "9533982f9fd619ff54f720ed4e31c00b",
-    "semantic_hash": "9533982f9fd619ff54f720ed4e31c00b"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IVFPQ.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "3ac4471ceb0114ed1c27ca4d284aa478",
+    "semantic_hash": "3ac4471ceb0114ed1c27ca4d284aa478"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/test_hubness.cpp": {
-    "mtime": 1781771039.4614356,
-    "ast_hash": "d568e4b04cf4db7f5a1676863737a326",
-    "semantic_hash": "d568e4b04cf4db7f5a1676863737a326"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IVFPQ.cuh": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "48a6cc8c90f67609219df19b6f74f0a2",
+    "semantic_hash": "48a6cc8c90f67609219df19b6f74f0a2"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/test_log_datasets.cpp": {
-    "mtime": 1781769521.9862306,
-    "ast_hash": "5d2a3b25f800f6dd3dd5392dc06a2afb",
-    "semantic_hash": "5d2a3b25f800f6dd3dd5392dc06a2afb"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IVFUtils.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "86e7d9b6b22dda463f3b779b8cb148a6",
+    "semantic_hash": "86e7d9b6b22dda463f3b779b8cb148a6"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/test_rank_weight.cpp": {
-    "mtime": 1781770830.7397742,
-    "ast_hash": "b00a1a148c41a5cbb1d0681b1bc900f3",
-    "semantic_hash": "b00a1a148c41a5cbb1d0681b1bc900f3"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IVFUtils.cuh": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "e711e469062ae979185862d0b99380d9",
+    "semantic_hash": "e711e469062ae979185862d0b99380d9"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/test_unweighted.cpp": {
-    "mtime": 1781770549.5123193,
-    "ast_hash": "bf4f220b02c85f5f27f6ab69ef8e99ab",
-    "semantic_hash": "bf4f220b02c85f5f27f6ab69ef8e99ab"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IVFUtilsSelect1.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "7c516c020ce1b9e57b98bb116606ea72",
+    "semantic_hash": "7c516c020ce1b9e57b98bb116606ea72"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/tune_gamma.cpp": {
-    "mtime": 1781768575.4760554,
-    "ast_hash": "f951ce4843c522eedb8f48d29de6168c",
-    "semantic_hash": "f951ce4843c522eedb8f48d29de6168c"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IVFUtilsSelect2.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "a5a9eab9ac58f66b4b8429948082c313",
+    "semantic_hash": "a5a9eab9ac58f66b4b8429948082c313"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/figures/hardness_diagnostic_scatter.png": {
-    "mtime": 1781712263.6686485,
-    "ast_hash": "faf77aae84a0f6d5d29ca28cfb243cbc",
-    "semantic_hash": "faf77aae84a0f6d5d29ca28cfb243cbc"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IcmEncoder.cu": {
+    "mtime": 1780316731.7066948,
+    "ast_hash": "8f1c915e48db41bf431ac4c25032a726",
+    "semantic_hash": "8f1c915e48db41bf431ac4c25032a726"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/figures/lookup_ef_heatmap_10x10.png": {
-    "mtime": 1782029621.6184053,
-    "ast_hash": "b97801678994c384dc890a1e91df152c",
-    "semantic_hash": "b97801678994c384dc890a1e91df152c"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IcmEncoder.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "8505ad0c9d318a22577a6fc12b302f30",
+    "semantic_hash": "8505ad0c9d318a22577a6fc12b302f30"
   },
-  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/figures/old_lookup_ef_heatmap_20x20.png": {
-    "mtime": 1782029621.6328053,
-    "ast_hash": "a3be86fb4b3e57134b39324754639393",
-    "semantic_hash": "a3be86fb4b3e57134b39324754639393"
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/IndexUtils.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "9016763e7e0d7de381b2450489442040",
+    "semantic_hash": "9016763e7e0d7de381b2450489442040"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/L2Norm.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "a6a9dc7ab597176451285d8e06b3a640",
+    "semantic_hash": "a6a9dc7ab597176451285d8e06b3a640"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/L2Norm.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "b3407de0f354812d7e13e1ef4c0c1b45",
+    "semantic_hash": "b3407de0f354812d7e13e1ef4c0c1b45"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/L2Select.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "224cce26b77628b60d3e8072c5b1fad5",
+    "semantic_hash": "224cce26b77628b60d3e8072c5b1fad5"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/L2Select.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "5df53ad20979e1846d869d0854230b20",
+    "semantic_hash": "5df53ad20979e1846d869d0854230b20"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/PQCodeDistances-inl.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "4f1a2b9d7f4d333dcfd3c0fe8fbec8ed",
+    "semantic_hash": "4f1a2b9d7f4d333dcfd3c0fe8fbec8ed"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/PQCodeDistances.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "0e55cd9eff48f3a2e818ba4c3d1608dc",
+    "semantic_hash": "0e55cd9eff48f3a2e818ba4c3d1608dc"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/PQCodeLoad.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "90da7f7f89845d00c818602f9fc79843",
+    "semantic_hash": "90da7f7f89845d00c818602f9fc79843"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/PQScanMultiPassNoPrecomputed-inl.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "14adf02d3eea33a8f4b351ce40664aff",
+    "semantic_hash": "14adf02d3eea33a8f4b351ce40664aff"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/PQScanMultiPassNoPrecomputed.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "5a39e76f900ce5806c8ce30ecaf770cd",
+    "semantic_hash": "5a39e76f900ce5806c8ce30ecaf770cd"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/PQScanMultiPassPrecomputed.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "63b58007a3080ce37e411fb6f8d09352",
+    "semantic_hash": "63b58007a3080ce37e411fb6f8d09352"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/PQScanMultiPassPrecomputed.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "12524156877a293e31e29a553fe7ffe4",
+    "semantic_hash": "12524156877a293e31e29a553fe7ffe4"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/RaftFlatIndex.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "b48079535667ffdce909d9db961502f7",
+    "semantic_hash": "b48079535667ffdce909d9db961502f7"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/RaftFlatIndex.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "87330f79967fe36dcaa1640209a15a64",
+    "semantic_hash": "87330f79967fe36dcaa1640209a15a64"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/RaftIVFFlat.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "10b0b6f368164f76de5a6eb3b04cacec",
+    "semantic_hash": "10b0b6f368164f76de5a6eb3b04cacec"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/RaftIVFFlat.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "fc74a07c694de9ff273e94959c667619",
+    "semantic_hash": "fc74a07c694de9ff273e94959c667619"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/RaftIVFPQ.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "47f8e740a5d7dd0d4cd840eb321c31b5",
+    "semantic_hash": "47f8e740a5d7dd0d4cd840eb321c31b5"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/RaftIVFPQ.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "914598e6ea93e73a1b40d15bb194bcd7",
+    "semantic_hash": "914598e6ea93e73a1b40d15bb194bcd7"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/VectorResidual.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "343fac649563486e11f98b562a8d69aa",
+    "semantic_hash": "343fac649563486e11f98b562a8d69aa"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/VectorResidual.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "f8c74fcb70d4d58a1784b99049eca528",
+    "semantic_hash": "f8c74fcb70d4d58a1784b99049eca528"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/scan/IVFInterleavedImpl.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "ab552f7626fed14d4e59918eb694fd91",
+    "semantic_hash": "ab552f7626fed14d4e59918eb694fd91"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/impl/scan/IVFInterleavedScanKernelTemplate.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "1cacdfa5d1260659d57945bcb543db91",
+    "semantic_hash": "1cacdfa5d1260659d57945bcb543db91"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/perf/PerfBinaryFlat.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "086e0b65953cb6e311bbf74e999d243f",
+    "semantic_hash": "086e0b65953cb6e311bbf74e999d243f"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/perf/PerfFlat.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "1b7162df0f9f1016cb04945e55d73f51",
+    "semantic_hash": "1b7162df0f9f1016cb04945e55d73f51"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/perf/PerfIVFFlat.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "b82da5a30abbb090a316775f6a53d83c",
+    "semantic_hash": "b82da5a30abbb090a316775f6a53d83c"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/perf/PerfIVFPQ.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "8e59647ba536e8dc1645c677d10c395f",
+    "semantic_hash": "8e59647ba536e8dc1645c677d10c395f"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/perf/PerfSelect.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "c3b2230c099e713df449931e88acf64a",
+    "semantic_hash": "c3b2230c099e713df449931e88acf64a"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/test/TestGpuDistance.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "109ad86019d0e04c22ae2fd5984a7906",
+    "semantic_hash": "109ad86019d0e04c22ae2fd5984a7906"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/test/TestGpuSelect.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "3f8a0e890ffc9976ac640e00814ed970",
+    "semantic_hash": "3f8a0e890ffc9976ac640e00814ed970"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/BlockSelectFloat.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "49737b9515c0ce6a0e11790b9ef31311",
+    "semantic_hash": "49737b9515c0ce6a0e11790b9ef31311"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/BlockSelectKernel.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "4bc49525b27748eb726943231709c9aa",
+    "semantic_hash": "4bc49525b27748eb726943231709c9aa"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/Comparators.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "ab39d9c1e7cc8b878acb867a8af8a8d4",
+    "semantic_hash": "ab39d9c1e7cc8b878acb867a8af8a8d4"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/ConversionOperators.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "9a43d2d15867fecd63bd91a1e8bcebe3",
+    "semantic_hash": "9a43d2d15867fecd63bd91a1e8bcebe3"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/CopyUtils.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "0ed2bbb06f2e7c55ecf09c750308990f",
+    "semantic_hash": "0ed2bbb06f2e7c55ecf09c750308990f"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/DeviceDefs.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "d36258eae24eaeafa573eb67c32f49ba",
+    "semantic_hash": "d36258eae24eaeafa573eb67c32f49ba"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/DeviceTensor-inl.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "d8652bb183c1057ad20272be114d34fe",
+    "semantic_hash": "d8652bb183c1057ad20272be114d34fe"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/DeviceTensor.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "422086ced713105a075a5e3e8e9d8f74",
+    "semantic_hash": "422086ced713105a075a5e3e8e9d8f74"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/DeviceUtils.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "007bfec68992b4e7724b1fe93d17b0f2",
+    "semantic_hash": "007bfec68992b4e7724b1fe93d17b0f2"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/DeviceVector.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "35ccb01f8c338b0f018238a910aac4f7",
+    "semantic_hash": "35ccb01f8c338b0f018238a910aac4f7"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/Float16.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "5739526531baa022141baa8b28759b62",
+    "semantic_hash": "5739526531baa022141baa8b28759b62"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/HostTensor-inl.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "f7301575f2d5da9154fcc8178fcaab01",
+    "semantic_hash": "f7301575f2d5da9154fcc8178fcaab01"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/HostTensor.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "1d11360dd62b708cb6c3a45936866e7a",
+    "semantic_hash": "1d11360dd62b708cb6c3a45936866e7a"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/Limits.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "c2103d13d610a3de2405a8b27d3cfede",
+    "semantic_hash": "c2103d13d610a3de2405a8b27d3cfede"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/LoadStoreOperators.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "ce96d4ccb2731f9618205727e1dac222",
+    "semantic_hash": "ce96d4ccb2731f9618205727e1dac222"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/MathOperators.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "215103d66528a4726e316908b474a62f",
+    "semantic_hash": "215103d66528a4726e316908b474a62f"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/MatrixMult-inl.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "12ab615d7d69a844be68f1678f653516",
+    "semantic_hash": "12ab615d7d69a844be68f1678f653516"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/MatrixMult.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "209c0bc076c9d14cb9660be0510e339d",
+    "semantic_hash": "209c0bc076c9d14cb9660be0510e339d"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/MergeNetworkBlock.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "fe02ebeef64c72d05df557be75178b28",
+    "semantic_hash": "fe02ebeef64c72d05df557be75178b28"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/MergeNetworkUtils.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "6fa805a6770e97f249c78b579bf0ae5a",
+    "semantic_hash": "6fa805a6770e97f249c78b579bf0ae5a"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/MergeNetworkWarp.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "3ea42b30526718715ecb60a7c0963a98",
+    "semantic_hash": "3ea42b30526718715ecb60a7c0963a98"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/NoTypeTensor.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "417489240f2425ae9919cc89115f73ab",
+    "semantic_hash": "417489240f2425ae9919cc89115f73ab"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/Pair.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "6616480c1f25fdcf8b2f28b1325784d5",
+    "semantic_hash": "6616480c1f25fdcf8b2f28b1325784d5"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/PtxUtils.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "70580a55cd50cb718f5809f568b9c3e7",
+    "semantic_hash": "70580a55cd50cb718f5809f568b9c3e7"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/RaftUtils.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "37f9084a59d81c5f847a1622661397ce",
+    "semantic_hash": "37f9084a59d81c5f847a1622661397ce"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/ReductionOperators.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "78745cca5de0ca06aa38e08e213fc161",
+    "semantic_hash": "78745cca5de0ca06aa38e08e213fc161"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/Reductions.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "3397de4c1afa45de231eab608dcf558f",
+    "semantic_hash": "3397de4c1afa45de231eab608dcf558f"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/Select.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "29e0d65798a52fb37f5aa174a54c0168",
+    "semantic_hash": "29e0d65798a52fb37f5aa174a54c0168"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/Tensor-inl.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "c5ae6b33d105a0a1fe6ae23a50d994e3",
+    "semantic_hash": "c5ae6b33d105a0a1fe6ae23a50d994e3"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/Tensor.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "f4b143d06e4d01992e04d60b312ea47f",
+    "semantic_hash": "f4b143d06e4d01992e04d60b312ea47f"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/ThrustUtils.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "873ce4f663430e2d184d752445c88878",
+    "semantic_hash": "873ce4f663430e2d184d752445c88878"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/Transpose.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "41498c75f6bd9c492360b9628eb61d5d",
+    "semantic_hash": "41498c75f6bd9c492360b9628eb61d5d"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/WarpPackedBits.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "f78a68d05024ea04101d9a7d37d89695",
+    "semantic_hash": "f78a68d05024ea04101d9a7d37d89695"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/WarpSelectFloat.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "0de1ade493eb5b21763b79119cd23549",
+    "semantic_hash": "0de1ade493eb5b21763b79119cd23549"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/WarpSelectKernel.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "c18e124093949184f0a373c82e2d53f0",
+    "semantic_hash": "c18e124093949184f0a373c82e2d53f0"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/WarpShuffles.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "10f40843e5ceb99c6a90441fd25013ac",
+    "semantic_hash": "10f40843e5ceb99c6a90441fd25013ac"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/blockselect/BlockSelectFloat1.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "06dd264d59d530c1d1aa708783af44ac",
+    "semantic_hash": "06dd264d59d530c1d1aa708783af44ac"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/blockselect/BlockSelectFloat128.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "75d66e6d0aa00ea6e31a89867e141096",
+    "semantic_hash": "75d66e6d0aa00ea6e31a89867e141096"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/blockselect/BlockSelectFloat256.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "b1b8f286b39aeccbf326f25d2fa7f804",
+    "semantic_hash": "b1b8f286b39aeccbf326f25d2fa7f804"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/blockselect/BlockSelectFloat32.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "0ec0885110dcc9346758f7a2067130a4",
+    "semantic_hash": "0ec0885110dcc9346758f7a2067130a4"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/blockselect/BlockSelectFloat64.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "5233b4cb7292f3421e465b7c61479700",
+    "semantic_hash": "5233b4cb7292f3421e465b7c61479700"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/blockselect/BlockSelectFloatF1024.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "e5632d3fad9c5c2973692790e6f1168e",
+    "semantic_hash": "e5632d3fad9c5c2973692790e6f1168e"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/blockselect/BlockSelectFloatF2048.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "c43af7bc507bf1fe8a68d74fe0a7b303",
+    "semantic_hash": "c43af7bc507bf1fe8a68d74fe0a7b303"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/blockselect/BlockSelectFloatF512.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "92ce9b9d7638dbcffc8b6994900fcbfb",
+    "semantic_hash": "92ce9b9d7638dbcffc8b6994900fcbfb"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/blockselect/BlockSelectFloatT1024.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "410720594267837083b3c70829356a19",
+    "semantic_hash": "410720594267837083b3c70829356a19"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/blockselect/BlockSelectFloatT2048.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "ac44a469177dabdd3d0b74d8dee68957",
+    "semantic_hash": "ac44a469177dabdd3d0b74d8dee68957"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/blockselect/BlockSelectFloatT512.cu": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "891a5864440c2b8e9eb21cacc4dd1613",
+    "semantic_hash": "891a5864440c2b8e9eb21cacc4dd1613"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/blockselect/BlockSelectImpl.cuh": {
+    "mtime": 1780316731.7103612,
+    "ast_hash": "443c9489c6fc6301d6d78b69abd606e7",
+    "semantic_hash": "443c9489c6fc6301d6d78b69abd606e7"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/warpselect/WarpSelectFloat1.cu": {
+    "mtime": 1780316731.7140274,
+    "ast_hash": "259fa1cbf16d000a30d014e92cd3fc5b",
+    "semantic_hash": "259fa1cbf16d000a30d014e92cd3fc5b"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/warpselect/WarpSelectFloat128.cu": {
+    "mtime": 1780316731.7140274,
+    "ast_hash": "039c0c65cb45a6a6c4d5de2aa7031135",
+    "semantic_hash": "039c0c65cb45a6a6c4d5de2aa7031135"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/warpselect/WarpSelectFloat256.cu": {
+    "mtime": 1780316731.7140274,
+    "ast_hash": "cbac56bc792be8de5c3812febbca7b23",
+    "semantic_hash": "cbac56bc792be8de5c3812febbca7b23"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/warpselect/WarpSelectFloat32.cu": {
+    "mtime": 1780316731.7140274,
+    "ast_hash": "b72460687c1dd300f0f1f7fb37b23199",
+    "semantic_hash": "b72460687c1dd300f0f1f7fb37b23199"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/warpselect/WarpSelectFloat64.cu": {
+    "mtime": 1780316731.7140274,
+    "ast_hash": "2fb3b5a9396a85e9bb40a7ae2e26f1ec",
+    "semantic_hash": "2fb3b5a9396a85e9bb40a7ae2e26f1ec"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/warpselect/WarpSelectFloatF1024.cu": {
+    "mtime": 1780316731.7140274,
+    "ast_hash": "c6ae72b58fc100a4251d0f962fa7cd09",
+    "semantic_hash": "c6ae72b58fc100a4251d0f962fa7cd09"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/warpselect/WarpSelectFloatF2048.cu": {
+    "mtime": 1780316731.7140274,
+    "ast_hash": "a81e33cf8fba2a7ace017f536bb8182e",
+    "semantic_hash": "a81e33cf8fba2a7ace017f536bb8182e"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/warpselect/WarpSelectFloatF512.cu": {
+    "mtime": 1780316731.7140274,
+    "ast_hash": "dcc4665a7e31471e532c6825ff48155d",
+    "semantic_hash": "dcc4665a7e31471e532c6825ff48155d"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/warpselect/WarpSelectFloatT1024.cu": {
+    "mtime": 1780316731.7140274,
+    "ast_hash": "a26bc031430452be0dfee32c9dcde7f7",
+    "semantic_hash": "a26bc031430452be0dfee32c9dcde7f7"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/warpselect/WarpSelectFloatT2048.cu": {
+    "mtime": 1780316731.7140274,
+    "ast_hash": "6fb95b3e1a4b85b673b934a80f4f7209",
+    "semantic_hash": "6fb95b3e1a4b85b673b934a80f4f7209"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/warpselect/WarpSelectFloatT512.cu": {
+    "mtime": 1780316731.7140274,
+    "ast_hash": "0c263b4794a46af8b6849b365e1133c9",
+    "semantic_hash": "0c263b4794a46af8b6849b365e1133c9"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/benchmarking-darth/faiss/gpu/utils/warpselect/WarpSelectImpl.cuh": {
+    "mtime": 1780316731.7140274,
+    "ast_hash": "7a9bd24ddb44b9294e09dd751ba9006e",
+    "semantic_hash": "7a9bd24ddb44b9294e09dd751ba9006e"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/pyproject.toml": {
+    "mtime": 1780316731.732359,
+    "ast_hash": "6b39932a6a5f590a6e4ef8737aaf9bed",
+    "semantic_hash": "6b39932a6a5f590a6e4ef8737aaf9bed"
+  },
+  "/home/ryawszn/dev/cpp/hnsw-2metric-ef/research/rr_vs_rd_comparison.md": {
+    "mtime": 1782395715.3836966,
+    "ast_hash": "b465c1fd2d6b64b1094ccbdc79f5c5ba",
+    "semantic_hash": "b465c1fd2d6b64b1094ccbdc79f5c5ba"
   }
 }

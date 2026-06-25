@@ -1327,38 +1327,6 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         return result;
     }
 
-    // ==============================================================================
-    // 2METRIC EXTENSION: FAST-PATH STATELESS SEARCH
-    // Resumes a stateless search directly from a cached Layer 0 enterpoint (ep_id),
-    // completely bypassing the redundant L->1 greedy descent computation.
-    // ==============================================================================
-    std::priority_queue<std::pair<dist_t, labeltype>>
-    searchKnnFromEp(tableint ep_id, const void *query_data, size_t k, size_t ef_lookup, BaseFilterFunctor* isIdAllowed = nullptr) const {
-        std::priority_queue<std::pair<dist_t, labeltype>> result;
-        if (cur_element_count == 0) return result;
-
-        std::priority_queue<std::pair<dist_t, tableint>, std::vector<std::pair<dist_t, tableint>>, CompareByFirst> top_candidates;
-        bool bare_bone_search = !num_deleted_ && !isIdAllowed;
-
-        if (bare_bone_search) {
-            top_candidates = searchBaseLayerST<true>(
-                    ep_id, query_data, std::max(ef_lookup, k), isIdAllowed);
-        } else {
-            top_candidates = searchBaseLayerST<false>(
-                    ep_id, query_data, std::max(ef_lookup, k), isIdAllowed);
-        }
-
-        while (top_candidates.size() > k) {
-            top_candidates.pop();
-        }
-        while (top_candidates.size() > 0) {
-            std::pair<dist_t, tableint> rez = top_candidates.top();
-            result.push(std::pair<dist_t, labeltype>(rez.first, getExternalLabel(rez.second)));
-            top_candidates.pop();
-        }
-        return result;
-    }
-
     std::pair<std::priority_queue<std::pair<dist_t, labeltype>>, float>
     adaptiveSearchKnn(
         const void *query_data,
