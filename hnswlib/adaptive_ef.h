@@ -1130,10 +1130,26 @@ namespace hnswdis
     class EfAdapter
     {
     private:
-        std::vector<std::pair<int, std::vector<std::pair<int, float>>>> ef_recall_estimators; // score, {(ef, recall)}, sorted by score
+        EfRecallTable ef_recall_estimators;
+
+        std::vector<EfRecallTable> dep_tables;
+        std::vector<float>         dep_thresholds;
+
         float expected_recall;
         float wae;
         int ef_upper_bound;
+
+        // Collect d_ep for every query by running the greedy upper-layer search only.
+        static std::vector<float> collect_dep(
+            const hnswlib::HierarchicalNSW<float> &alg_hnsw,
+            const MatrixXf &query_vectors)
+        {
+            std::vector<float> deps;
+            deps.reserve(query_vectors.rows());
+            for (int i = 0; i < query_vectors.rows(); ++i)
+                deps.push_back(alg_hnsw.computeEntryPointDistance(query_vectors.row(i).data()));
+            return deps;
+        }
 
         void init(const std::shared_ptr<hnswlib::HierarchicalNSW<float>> alg_hnsw,
                   const std::shared_ptr<hnswdis::MatrixXf> data_vectors,
@@ -1144,8 +1160,8 @@ namespace hnswdis
                   const std::shared_ptr<hnswdis::MatrixXf> query_vectors,
                   const std::shared_ptr<hnswdis::MatrixXi> ground_truth_ptr,
                   const hnswdis::ApproximatedScoreCalculator::WeightDecayType weight_decay_type,
-                  const int num_bins
-                )
+                  const int num_bins,
+                  EfRecallTable &out_table)
         {
             hnswdis::ApproximatedScoreCalculator score_cal(quantile_step, weight_decay_type, num_bins);
 
@@ -1153,52 +1169,47 @@ namespace hnswdis
             size_t second_ef = static_cast<size_t>(1.5 * first_ef);
 
             RecallEstimator first_recall_estimator(alg_hnsw, data_vectors, query_vectors, ground_truth_ptr, k, score_cal, first_ef, statics_length);
-            add_ef_recall(first_ef, first_recall_estimator);
+            add_ef_recall(first_ef, first_recall_estimator, out_table);
             float first_average_recall = compute_average_recall(first_recall_estimator);
             std::cout << "Initial average recall with ef=" << first_ef << ": " << first_average_recall << std::endl;
 
             RecallEstimator second_recall_estimator(alg_hnsw, data_vectors, query_vectors, ground_truth_ptr, k, score_cal, second_ef, statics_length);
-            add_ef_recall(second_ef, second_recall_estimator);
+            add_ef_recall(second_ef, second_recall_estimator, out_table);
             float second_average_recall = compute_average_recall(second_recall_estimator);
             std::cout << "Initial average recall with ef=" << second_ef << ": " << second_average_recall << std::endl;
 
             auto score_to_query_map = first_recall_estimator.get_score_to_query_map();
 
-            // improve the recall for queries with lower recall for each score group
-            for (size_t i = 0; i < ef_recall_estimators.size(); ++i)
+            for (size_t i = 0; i < out_table.size(); ++i)
             {
-                int score = ef_recall_estimators[i].first;             // score
-                auto &ef_recall_list = ef_recall_estimators[i].second; //{(ef, recall), ...}
+                int score = out_table[i].first;
+                auto &ef_recall_list = out_table[i].second;
 
-                // the first two ef_recall_list are the first and second recall estimators with ef = k and ef = 1.5 * k
                 int latest_ef = ef_recall_list[1].first;
                 float latest_agg_recall = ef_recall_list[1].second;
 
                 int ef_diff = ef_recall_list[1].first - ef_recall_list[0].first;
                 float recall_diff = ef_recall_list[1].second - ef_recall_list[0].second;
 
-                auto it = score_to_query_map.find(score); // the it pointer is poiting to a list of queries with the same score
+                auto it = score_to_query_map.find(score);
                 if (it != score_to_query_map.end())
                 {
-                    while (expected_recall - latest_agg_recall > 1e-4f) // improve the recall for quries with lower recall
+                    while (expected_recall - latest_agg_recall > 1e-4f)
                     {
                         ef_diff = std::max((int)(ef_diff * (expected_recall - latest_agg_recall) / recall_diff), (int)(k * 0.5));
                         int ef = latest_ef + ef_diff;
 
                         if (ef > ef_upper_bound)
-                        {
                             ef = ef_upper_bound;
-                        }
 
-                        alg_hnsw->setEf(ef);            // set ef
-                        std::vector<float> recalls_ori; // recording recall for each query
+                        alg_hnsw->setEf(ef);
+                        std::vector<float> recalls_ori;
                         recalls_ori.reserve(it->second.size());
 
-                        for (const auto &query_index : it->second) // search each query
+                        for (const auto &query_index : it->second)
                         {
                             auto ret = alg_hnsw->searchKnn(
                                 query_vectors->row(query_index).data(), k);
-                            // transforming to closer first
                             size_t count = ret.size();
                             std::vector<size_t> labels(count);
                             while (!ret.empty())
@@ -1209,45 +1220,28 @@ namespace hnswdis
 
                             const hnswdis::RowVectorXi gt = ground_truth_ptr->row(query_index);
                             std::unordered_set<int> get_set;
-                            // Insert ground truth into the set, only the first k elements
-                            for (int j = 0; j < k; ++j)
-                            {
+                            for (int j = 0; j < (int)k; ++j)
                                 get_set.insert(gt(j));
-                            }
-                            // Compute recall
+
                             int correct = 0;
                             for (const auto &item : labels)
-                            {
                                 if (get_set.count(item))
-                                {
                                     correct++;
-                                }
-                            }
 
-                            float recall = static_cast<float>(correct) / k;
-                            recalls_ori.push_back(recall);
+                            recalls_ori.push_back(static_cast<float>(correct) / k);
                         }
 
                         std::vector<float> recalls;
-                        for (size_t i = 0; i < recalls_ori.size(); i++)
-                        {
-                            if (recalls_ori[i] < 1e-3f)
-                            {
-                                continue;
-                            }
-                            recalls.push_back(recalls_ori[i]);
-                        }
+                        for (float r : recalls_ori)
+                            if (r >= 1e-3f)
+                                recalls.push_back(r);
 
                         float sum = 0.0f;
-                        for (const auto &stat : recalls)
-                        {
-                            sum += stat;
-                        }
-                        float agg_recall = sum / recalls.size(); // average recall
+                        for (float r : recalls) sum += r;
+                        float agg_recall = sum / recalls.size();
 
                         ef_recall_list.push_back({ef, agg_recall});
 
-                        // update the latest ef and recall for the next iteration
                         recall_diff = agg_recall - latest_agg_recall;
                         latest_ef = ef;
                         latest_agg_recall = agg_recall;
@@ -1257,28 +1251,23 @@ namespace hnswdis
                             std::cout << "Recall diff is too small, break." << std::endl;
                             break;
                         }
-
                         if (latest_ef == ef_upper_bound)
-                        {
                             break;
-                        }
                     }
                 }
             }
 
-            auto &stat = first_recall_estimator.get_recall_statistics(); // query scores are unchanged
+            auto &stat = first_recall_estimator.get_recall_statistics();
             float weighted_average_ef = 0.0f;
-            for (int i = 0; i < stat.size(); ++i)
+            for (int i = 0; i < (int)stat.size(); ++i)
             {
                 size_t cnt = std::get<5>(stat[i]);
-                // initial ef is the last ef in the ef_recall_estimators
-                size_t ef = ef_recall_estimators[i].second.back().first;
-                // // find the ef that is closest to the expected recall
-                for (size_t j = 0; j < ef_recall_estimators[i].second.size() - 1; ++j) // score, {(ef, recall)}, sorted by score
+                size_t ef = out_table[i].second.back().first;
+                for (size_t j = 0; j < out_table[i].second.size() - 1; ++j)
                 {
-                    if (ef_recall_estimators[i].second[j].second >= expected_recall)
+                    if (out_table[i].second[j].second >= expected_recall)
                     {
-                        ef = ef_recall_estimators[i].second[j].first;
+                        ef = out_table[i].second[j].first;
                         break;
                     }
                 }
@@ -1289,28 +1278,28 @@ namespace hnswdis
             wae = weighted_average_ef;
         }
 
-        void add_ef_recall(const int ef, const RecallEstimator &recall_estimator)
+        void add_ef_recall(const int ef, const RecallEstimator &recall_estimator, EfRecallTable &out_table)
         {
             const std::vector<std::pair<int, float>> &score_recall = get_score_recall(recall_estimator);
-            if (ef_recall_estimators.empty())
+            if (out_table.empty())
             {
-                ef_recall_estimators.reserve(score_recall.size());
+                out_table.reserve(score_recall.size());
                 for (size_t i = 0; i < score_recall.size(); ++i)
                 {
                     std::vector<std::pair<int, float>> ef_recall;
                     ef_recall.push_back({ef, score_recall[i].second});
-                    ef_recall_estimators.emplace_back(score_recall[i].first, std::move(ef_recall)); // score -> {(ef, recall), ...}
+                    out_table.emplace_back(score_recall[i].first, std::move(ef_recall));
                 }
             }
             else
             {
-                if (score_recall.size() != ef_recall_estimators.size())
+                if (score_recall.size() != out_table.size())
                 {
                     throw std::runtime_error("Score recall size mismatch in add_ef_recall.");
                 }
                 for (size_t i = 0; i < score_recall.size(); ++i)
                 {
-                    auto &ef_recall = ef_recall_estimators[i].second;
+                    auto &ef_recall = out_table[i].second;
                     ef_recall.emplace_back(ef, score_recall[i].second);
                 }
             }
@@ -1378,7 +1367,7 @@ namespace hnswdis
             {
                 // Sample data and compute ground truth
                 std::cout << "Sampling data and computing ground truth..." << std::endl;
-                auto pair = compute_samplings(data_vectors, metric, k, 200);
+                auto pair = compute_samplings(data_vectors, metric, k, 2000);
                 MatrixXf sample_query_vectors = pair.first;
                 MatrixXi sample_ground_truth = pair.second;
                 serialize_samplings(samplings_filename, sample_query_vectors, sample_ground_truth);
@@ -1387,7 +1376,7 @@ namespace hnswdis
                 sample_ground_truth_ptr = std::make_shared<hnswdis::MatrixXi>(sample_ground_truth);
             }
 
-            init(alg_hnsw, data_vectors, k, metric, quantile_step, statics_length, sample_query_vectors_ptr, sample_ground_truth_ptr, weight_decay_type, num_bins);
+            init(alg_hnsw, data_vectors, k, metric, quantile_step, statics_length, sample_query_vectors_ptr, sample_ground_truth_ptr, weight_decay_type, num_bins, ef_recall_estimators);
         }
 
         EfAdapter(
@@ -1404,13 +1393,76 @@ namespace hnswdis
             const hnswdis::ApproximatedScoreCalculator::WeightDecayType weight_decay_type = hnswdis::ApproximatedScoreCalculator::WeightDecayType::Exponential,
             const int num_bins = 5) : expected_recall(expected_recall), ef_upper_bound(ef_upper_bound)
         {
-            init(alg_hnsw, data_vectors, k, metric, quantile_step, statics_length, query_vectors, ground_truth_ptr, weight_decay_type, num_bins);
+            init(alg_hnsw, data_vectors, k, metric, quantile_step, statics_length, query_vectors, ground_truth_ptr, weight_decay_type, num_bins, ef_recall_estimators);
         }
 
         EfAdapter(
             const std::string &filename)
         {
             deserialize(filename);
+        }
+
+        void init_with_dep_buckets(
+            const std::shared_ptr<hnswlib::HierarchicalNSW<float>> alg_hnsw,
+            const std::shared_ptr<hnswdis::MatrixXf> data_vectors,
+            const size_t k,
+            const std::string metric,
+            const float quantile_step,
+            const size_t statics_length,
+            const std::shared_ptr<hnswdis::MatrixXf> query_vectors,
+            const std::shared_ptr<hnswdis::MatrixXi> ground_truth_ptr,
+            const hnswdis::ApproximatedScoreCalculator::WeightDecayType weight_decay_type,
+            const int num_bins,
+            const int n_dep_tables)
+        {
+            const int n = query_vectors->rows();
+
+            std::vector<float> deps = collect_dep(*alg_hnsw, *query_vectors);
+
+            std::vector<int> order(n);
+            std::iota(order.begin(), order.end(), 0);
+            std::sort(order.begin(), order.end(), [&](int a, int b) { return deps[a] < deps[b]; });
+
+            int actual_n_dep_tables = std::max(1, n_dep_tables);
+            int chunk = n / actual_n_dep_tables;
+
+            dep_thresholds.clear();
+            for (int t = 1; t < actual_n_dep_tables; ++t)
+                dep_thresholds.push_back(deps[order[t * chunk]]);
+
+            dep_tables.resize(actual_n_dep_tables);
+
+            float accumulated_wae = 0.0f;
+            for (int t = 0; t < actual_n_dep_tables; ++t)
+            {
+                int lo = t * chunk;
+                int hi = (t == actual_n_dep_tables - 1) ? n : (t + 1) * chunk;
+
+                int bucket_size = hi - lo;
+                MatrixXf bucket_queries(bucket_size, query_vectors->cols());
+                MatrixXi bucket_gt(bucket_size, ground_truth_ptr->cols());
+                for (int r = 0; r < bucket_size; ++r)
+                {
+                    bucket_queries.row(r) = query_vectors->row(order[lo + r]);
+                    bucket_gt.row(r)      = ground_truth_ptr->row(order[lo + r]);
+                }
+
+                std::cout << "Training dep-bucket " << t
+                          << " [" << deps[order[lo]] << ", "
+                          << (t < actual_n_dep_tables - 1 ? deps[order[hi]] : std::numeric_limits<float>::infinity())
+                          << ") with " << bucket_size << " queries." << std::endl;
+
+                init(alg_hnsw,
+                     data_vectors,
+                     k, metric, quantile_step, statics_length,
+                     std::make_shared<MatrixXf>(bucket_queries),
+                     std::make_shared<MatrixXi>(bucket_gt),
+                     weight_decay_type, num_bins,
+                     dep_tables[t]);
+                
+                accumulated_wae += wae * ((float)bucket_size / n);
+            }
+            wae = accumulated_wae;
         }
 
         size_t estimate_ef(float score)
@@ -1437,35 +1489,62 @@ namespace hnswdis
             return entry->second.back().first;
         }
 
+        static void write_table(std::ofstream &out, const EfRecallTable &table)
+        {
+            size_t sz = table.size();
+            hnswlib::writeBinaryPOD(out, sz);
+            for (const auto &entry : table)
+            {
+                hnswlib::writeBinaryPOD(out, entry.first);
+                size_t recall_size = entry.second.size();
+                hnswlib::writeBinaryPOD(out, recall_size);
+                for (const auto &p : entry.second)
+                {
+                    hnswlib::writeBinaryPOD(out, p.first);
+                    hnswlib::writeBinaryPOD(out, p.second);
+                }
+            }
+        }
+
+        static void read_table(std::ifstream &in, EfRecallTable &table)
+        {
+            size_t sz;
+            hnswlib::readBinaryPOD(in, sz);
+            table.resize(sz);
+            for (auto &entry : table)
+            {
+                hnswlib::readBinaryPOD(in, entry.first);
+                size_t recall_size;
+                hnswlib::readBinaryPOD(in, recall_size);
+                entry.second.resize(recall_size);
+                for (auto &p : entry.second)
+                {
+                    hnswlib::readBinaryPOD(in, p.first);
+                    hnswlib::readBinaryPOD(in, p.second);
+                }
+            }
+        }
+
         void serialize(const std::string &filename) const
         {
             std::ofstream out(filename, std::ios::binary);
             if (!out)
-            {
                 throw std::runtime_error("Failed to open file for writing: " + filename);
-            }
 
-            // Serialize ef_recall_estimators
-            size_t estimators_size = ef_recall_estimators.size();
-            hnswlib::writeBinaryPOD(out, estimators_size);
-            for (const auto &entry : ef_recall_estimators)
-            {
-                hnswlib::writeBinaryPOD(out, entry.first); // score
+            write_table(out, ef_recall_estimators);
 
-                size_t recall_size = entry.second.size();
-                hnswlib::writeBinaryPOD(out, recall_size); // recall_data size
-                for (const auto &pair : entry.second)
-                {
-                    hnswlib::writeBinaryPOD(out, pair.first);  // ef
-                    hnswlib::writeBinaryPOD(out, pair.second); // recall
-                }
-            }
+            hnswlib::writeBinaryPOD(out, expected_recall);
+            hnswlib::writeBinaryPOD(out, wae);
 
-            // Serialize expected_recall
-            hnswlib::writeBinaryPOD(out, expected_recall); // expected_recall
+            size_t n_dep = dep_tables.size();
+            hnswlib::writeBinaryPOD(out, n_dep);
+            for (const auto &t : dep_tables)
+                write_table(out, t);
 
-            // Serialize wae
-            hnswlib::writeBinaryPOD(out, wae); // wae
+            size_t n_thresh = dep_thresholds.size();
+            hnswlib::writeBinaryPOD(out, n_thresh);
+            for (float v : dep_thresholds)
+                hnswlib::writeBinaryPOD(out, v);
 
             out.close();
         }
@@ -1474,33 +1553,24 @@ namespace hnswdis
         {
             std::ifstream in(filename, std::ios::binary);
             if (!in)
-            {
                 throw std::runtime_error("Failed to open file for reading: " + filename);
-            }
 
-            // Deserialize ef_recall_estimators
-            size_t estimators_size;
-            hnswlib::readBinaryPOD(in, estimators_size); // status size
-            ef_recall_estimators.resize(estimators_size);
-            for (auto &entry : ef_recall_estimators)
-            {
-                hnswlib::readBinaryPOD(in, entry.first); // score
+            read_table(in, ef_recall_estimators);
 
-                size_t recall_size;
-                hnswlib::readBinaryPOD(in, recall_size); // recall_data size
-                entry.second.resize(recall_size);
-                for (auto &pair : entry.second)
-                {
-                    hnswlib::readBinaryPOD(in, pair.first);  // ef
-                    hnswlib::readBinaryPOD(in, pair.second); // recall
-                }
-            }
+            hnswlib::readBinaryPOD(in, expected_recall);
+            hnswlib::readBinaryPOD(in, wae);
 
-            // Deserialize expected_recall
-            hnswlib::readBinaryPOD(in, expected_recall); // expected_recall
+            size_t n_dep;
+            hnswlib::readBinaryPOD(in, n_dep);
+            dep_tables.resize(n_dep);
+            for (auto &t : dep_tables)
+                read_table(in, t);
 
-            // Deserialize wae
-            hnswlib::readBinaryPOD(in, wae); // wae
+            size_t n_thresh;
+            hnswlib::readBinaryPOD(in, n_thresh);
+            dep_thresholds.resize(n_thresh);
+            for (float &v : dep_thresholds)
+                hnswlib::readBinaryPOD(in, v);
 
             in.close();
         }
@@ -1511,25 +1581,20 @@ namespace hnswdis
             {
                 std::cout << "Score: " << entry.first << std::endl;
                 for (const auto &ef_recall : entry.second)
-                {
                     std::cout << "EF: " << ef_recall.first << ", Recall: " << ef_recall.second << std::endl;
-                }
             }
         }
 
-        const std::vector<std::pair<int, std::vector<std::pair<int, float>>>> &get_ef_recall_estimators() const
-        {
-            return ef_recall_estimators;
-        }
+        const EfRecallTable &get_ef_recall_estimators() const { return ef_recall_estimators; }
 
-        float get_expected_recall() const
-        {
-            return expected_recall;
-        }
+        const std::vector<EfRecallTable> &get_all_tables() const { return dep_tables; }
 
-        float get_wae() const
-        {
-            return wae;
-        }
+        const std::vector<float> &get_dep_thresholds() const { return dep_thresholds; }
+
+        bool has_dep_tables() const { return !dep_tables.empty(); }
+
+        float get_expected_recall() const { return expected_recall; }
+
+        float get_wae() const { return wae; }
     };
 }

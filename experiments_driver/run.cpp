@@ -3,6 +3,34 @@
 #include <filesystem>
 #include <cstdlib>
 
+static constexpr int N_DEP_TABLES = 20;
+
+static hnswdis::Sketch make_sketch(const hnswdis::EfAdapter &adapter, float expected_recall)
+{
+    if (adapter.has_dep_tables())
+        return hnswdis::Sketch(adapter.get_all_tables(), adapter.get_dep_thresholds(), expected_recall);
+    return hnswdis::Sketch(adapter.get_ef_recall_estimators(), expected_recall);
+}
+
+static void train_dep_buckets(
+    hnswdis::EfAdapter &adapter,
+    const std::shared_ptr<hnswlib::HierarchicalNSW<float>> hnsw,
+    const std::shared_ptr<hnswdis::MatrixXf> data,
+    const size_t k,
+    const std::string &metric,
+    const float quantile_step,
+    const size_t statics_length,
+    const std::shared_ptr<hnswdis::MatrixXf> query_vectors,
+    const std::shared_ptr<hnswdis::MatrixXi> ground_truth,
+    const int ef_upper_bound)
+{
+    adapter.init_with_dep_buckets(
+        hnsw, data, k, metric, quantile_step, statics_length,
+        query_vectors, ground_truth,
+        hnswdis::ApproximatedScoreCalculator::WeightDecayType::Exponential,
+        5, N_DEP_TABLES);
+}
+
 const char *experiments_root = std::getenv("EXPERIMENTS_ROOT");
 const auto root = experiments_root ? std::filesystem::path(experiments_root)
                                    : std::filesystem::current_path();
@@ -119,9 +147,7 @@ void online_exp()
         ef_adapter_ptr = std::make_shared<hnswdis::EfAdapter>(ef_adapter);
 
         // 3. create sketch
-        hnswdis::Sketch sketch(
-            ef_adapter_ptr->get_ef_recall_estimators(),
-            expected_recall);
+        hnswdis::Sketch sketch = make_sketch(*ef_adapter_ptr, expected_recall);
         const float wae = ef_adapter_ptr->get_wae();
         std::cout << "****Weighted average ef: " << (size_t)wae << std::endl;
         size_t statics_length = 1 + 32 + 31 * 32; // 2-hop neighbors on the base layer: M = 16
@@ -184,7 +210,7 @@ void offline_laion_text2image()
 
     float expected_recall = 0.95;
     float quantile_step = 1e-3;
-    int sampling_size = 200;
+    int sampling_size = 5000;
     int ef_upper_bound = 5000;
     int k = 1000;
     size_t statics_length = 1 + 32 + 31 * 32; // 2-hop neighbors on the base layer: M = 16
@@ -224,6 +250,15 @@ void offline_laion_text2image()
         end = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         std::cout << "EF-estimation table computing time: " << duration << " ms" << std::endl;
+        {
+            hnswdis::MatrixXf _sq; hnswdis::MatrixXi _sgt;
+            hnswdis::deserialize_samplings(samplings_path, _sq, _sgt);
+            train_dep_buckets(ef_adapter, hnsw, data,
+                k, "cd", quantile_step, statics_length,
+                std::make_shared<hnswdis::MatrixXf>(_sq),
+                std::make_shared<hnswdis::MatrixXi>(_sgt),
+                ef_upper_bound);
+        }
         ef_adapter.serialize(ef_adaptor_path);
     }
 }
@@ -265,7 +300,7 @@ void offline_exp()
         auto [hnsw, query, data, ground_truth, space] = load_index_and_data(hdf5_path, index_path, metric);
 
         float expected_recall = 0.95;
-        int sampling_size = 200;
+        int sampling_size = 5000;
         int ef_upper_bound = 5000;
         size_t statics_length = 1 + 32 + 31 * 32; // 2-hop neighbors on the base layer: M = 16
 
@@ -317,6 +352,15 @@ void offline_exp()
             end = std::chrono::high_resolution_clock::now();
             duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
             std::cout << "EF-estimation table computing time: " << duration << " ms" << std::endl;
+            {
+                hnswdis::MatrixXf _sq; hnswdis::MatrixXi _sgt;
+                hnswdis::deserialize_samplings(samplings_path, _sq, _sgt);
+                train_dep_buckets(ef_adapter, hnsw, data,
+                    k, metric, quantile_step, statics_length,
+                    std::make_shared<hnswdis::MatrixXf>(_sq),
+                    std::make_shared<hnswdis::MatrixXi>(_sgt),
+                    ef_upper_bound);
+            }
             ef_adapter.serialize(ef_adaptor_path);
         }
     }
@@ -414,9 +458,7 @@ void sensitivity_analysis()
                 duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
                 std::cout << "EF-estimation table computing time: " << duration << " ms" << std::endl;
                 auto ef_adapter_ptr = std::make_shared<hnswdis::EfAdapter>(ef_adapter);
-                hnswdis::Sketch sketch(
-                    ef_adapter_ptr->get_ef_recall_estimators(),
-                    expected_recall);
+                hnswdis::Sketch sketch = make_sketch(*ef_adapter_ptr, expected_recall);
                 std::cout << "print sketch" << std::endl;
                 sketch.print();
                 const float wae = ef_adapter_ptr->get_wae();
@@ -489,7 +531,7 @@ void insert_exp_setup(
     // compute ef_adaptor
     std::string ef_adaptor_path = (root / "incremental_update" / batch_type / (dataset + "-ef_adaptor-" + "-k" + std::to_string(k) + "-ef.bin")).string();
     float expected_recall = 0.95;
-    int sampling_size = 200;
+    int sampling_size = 5000;
     int ef_upper_bound = 5000;
     float quantile_step = 1e-3;
     size_t statics_length = 1 + 32 + 31 * 32; // 2-hop neighbors on the base layer: M = 16
@@ -499,6 +541,10 @@ void insert_exp_setup(
     end = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     std::cout << "EF-estimation table computing time: " << duration.count() << " ms" << std::endl;
+    train_dep_buckets(ef_adapter, alg_hnsw, before_data_ptr,
+        k, metric, quantile_step, statics_length,
+        sample_query_vectors, std::make_shared<hnswdis::MatrixXi>(sample_ground_truth),
+        ef_upper_bound);
     ef_adapter.serialize(ef_adaptor_path);
 }
 
@@ -601,6 +647,10 @@ void insert_exp_adaef_update(
         duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         std::cout << "EF-estimation table computing time: " << duration.count() << " ms" << std::endl;
         std::string updated_ef_adaptor_path = (root / "incremental_update" / batch_type / (dataset + "-ef_adaptor-" + "-k" + std::to_string(k) + "-ef-updated.bin")).string();
+        train_dep_buckets(ef_adapter, alg_hnsw, full_data_ptr,
+            k, metric, quantile_step, statics_length,
+            sample_query_vectors_ptr, sample_ground_truth_ptr,
+            ef_upper_bound);
         ef_adapter.serialize(updated_ef_adaptor_path);
     }
 }
@@ -687,9 +737,7 @@ void insert_exp(bool setup = false)
             hnswdis::EfAdapter ef_adapter(ef_adaptor_path);
             ef_adapter_ptr = std::make_shared<hnswdis::EfAdapter>(ef_adapter);
 
-            hnswdis::Sketch sketch(
-                ef_adapter_ptr->get_ef_recall_estimators(),
-                expected_recall);
+            hnswdis::Sketch sketch = make_sketch(*ef_adapter_ptr, expected_recall);
             const float wae = ef_adapter_ptr->get_wae();
             std::cout << "****Weighted average ef: " << (size_t)wae << std::endl;
             hnswdis::ApproximatedScoreCalculator score_cal(quantile_step);
@@ -712,9 +760,7 @@ void insert_exp(bool setup = false)
             std::cout << "Updated ef_adaptor loaded" << std::endl;
 
             // perform the search
-            hnswdis::Sketch sketch(
-                ef_adapter.get_ef_recall_estimators(),
-                expected_recall);
+            hnswdis::Sketch sketch = make_sketch(ef_adapter, expected_recall);
             const float wae = ef_adapter.get_wae();
             std::cout << "****Weighted average ef: " << (size_t)wae << std::endl;
 
@@ -789,7 +835,7 @@ void delete_exp_setup(
         // compute ef_adaptor
         std::string ef_adaptor_path = (root / "incremental_deletion" / batch_type / (dataset + "-ef_adaptor-" + "-k" + std::to_string(k) + "-ef-recomp.bin")).string();
         float expected_recall = 0.95;
-        int sampling_size = 200;
+        int sampling_size = 5000;
         int ef_upper_bound = 5000;
         float quantile_step = 1e-3;
         size_t statics_length = 1 + 32 + 31 * 32; // 2-hop neighbors on the base layer: M = 16
@@ -801,6 +847,10 @@ void delete_exp_setup(
         end = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         std::cout << "EF-estimation table computing time: " << duration.count() << " ms" << std::endl;
+        train_dep_buckets(ef_adapter, alg_hnsw, after_updates_data_ptr,
+            k, metric, quantile_step, statics_length,
+            sample_query_vectors, sample_ground_truth_ptr,
+            ef_upper_bound);
         ef_adapter.serialize(ef_adaptor_path);
     }
 }
@@ -872,6 +922,10 @@ void delete_exp_adaef_update(
     duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     std::cout << "EF-estimation table computing time: " << duration.count() << " ms" << std::endl;
     std::string updated_ef_adaptor_path = (root / "incremental_deletion" / batch_type / (dataset + "-ef_adaptor-" + "-k" + std::to_string(k) + "-ef-updated.bin")).string();
+    train_dep_buckets(ef_adapter, alg_hnsw, after_updates_data_ptr,
+        k, metric, quantile_step, statics_length,
+        sample_query_vectors_ptr, sample_ground_truth_ptr,
+        ef_upper_bound);
     ef_adapter.serialize(updated_ef_adaptor_path);
 }
 
@@ -965,9 +1019,7 @@ void delete_exp(bool setup = false)
             hnswdis::EfAdapter ef_adapter(ef_adaptor_path);
             ef_adapter_ptr = std::make_shared<hnswdis::EfAdapter>(ef_adapter);
 
-            hnswdis::Sketch sketch(
-                ef_adapter_ptr->get_ef_recall_estimators(),
-                expected_recall);
+            hnswdis::Sketch sketch = make_sketch(*ef_adapter_ptr, expected_recall);
             const float wae = ef_adapter_ptr->get_wae();
             std::cout << "****Weighted average ef: " << (size_t)wae << std::endl;
             hnswdis::ApproximatedScoreCalculator score_cal(quantile_step);
@@ -990,9 +1042,7 @@ void delete_exp(bool setup = false)
             std::cout << "Updated ef_adaptor loaded" << std::endl;
 
             // perform the search
-            hnswdis::Sketch sketch(
-                ef_adapter.get_ef_recall_estimators(),
-                expected_recall);
+            hnswdis::Sketch sketch = make_sketch(ef_adapter, expected_recall);
             const float wae = ef_adapter.get_wae();
             std::cout << "****Weighted average ef: " << (size_t)wae << std::endl;
 
@@ -1017,9 +1067,7 @@ void delete_exp(bool setup = false)
             std::cout << "Recomputed ef_adaptor loaded" << std::endl;
 
             // perform the search
-            hnswdis::Sketch sketch(
-                ef_adapter.get_ef_recall_estimators(),
-                expected_recall);
+            hnswdis::Sketch sketch = make_sketch(ef_adapter, expected_recall);
             const float wae = ef_adapter.get_wae();
             std::cout << "****Weighted average ef: " << (size_t)wae << std::endl;
 
@@ -1101,11 +1149,13 @@ void ablation_study_distance_list_size()
             auto end = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
             std::cout << "EF-estimation table computing time: " << duration << " ms" << std::endl;
+            train_dep_buckets(ef_adapter, hnsw, data,
+                k, metric, quantile_step, statics_length,
+                std::make_shared<hnswdis::MatrixXf>(sample_query_vectors), std::make_shared<hnswdis::MatrixXi>(sample_ground_truth),
+                ef_upper_bound);
             ef_adapter.serialize(ef_adaptor_path);
 
-            hnswdis::Sketch sketch(
-                ef_adapter.get_ef_recall_estimators(),
-                expected_recall);
+            hnswdis::Sketch sketch = make_sketch(ef_adapter, expected_recall);
             const float wae = ef_adapter.get_wae();
             std::cout << "****Weighted average ef: " << (size_t)wae << std::endl;
             hnsw->setEf(wae);
@@ -1184,11 +1234,13 @@ void ablation_study_sampling_size()
             end = std::chrono::high_resolution_clock::now();
             duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
             std::cout << "EF-estimation table computing time: " << duration << " ms" << std::endl;
+            train_dep_buckets(ef_adapter, hnsw, data,
+                k, metric, quantile_step, statics_length,
+                std::make_shared<hnswdis::MatrixXf>(pair.first), std::make_shared<hnswdis::MatrixXi>(pair.second),
+                ef_upper_bound);
             ef_adapter.serialize(ef_adaptor_path);
 
-            hnswdis::Sketch sketch(
-                ef_adapter.get_ef_recall_estimators(),
-                expected_recall);
+            hnswdis::Sketch sketch = make_sketch(ef_adapter, expected_recall);
             const float wae = ef_adapter.get_wae();
             std::cout << "****Weighted average ef: " << (size_t)wae << std::endl;
             hnsw->setEf(wae);
@@ -1268,11 +1320,13 @@ void ablation_study_weighted_decay_function()
             auto end = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
             std::cout << "EF-estimation table computing time: " << duration << " ms" << std::endl;
+            train_dep_buckets(ef_adapter, hnsw, data,
+                k, metric, quantile_step, statics_length,
+                std::make_shared<hnswdis::MatrixXf>(sample_query_vectors), std::make_shared<hnswdis::MatrixXi>(sample_ground_truth),
+                ef_upper_bound);
             ef_adapter.serialize(ef_adaptor_path);
 
-            hnswdis::Sketch sketch(
-                ef_adapter.get_ef_recall_estimators(),
-                expected_recall);
+            hnswdis::Sketch sketch = make_sketch(ef_adapter, expected_recall);
             std::cout << "Print ef-recall estimators:" << std::endl;
             sketch.print();
             const float wae = ef_adapter.get_wae();
@@ -1355,9 +1409,7 @@ void per_query_result_exp()
         ef_adapter_ptr = std::make_shared<hnswdis::EfAdapter>(ef_adapter);
 
         // 3. create sketch
-        hnswdis::Sketch sketch(
-            ef_adapter_ptr->get_ef_recall_estimators(),
-            expected_recall);
+        hnswdis::Sketch sketch = make_sketch(*ef_adapter_ptr, expected_recall);
         const float wae = ef_adapter_ptr->get_wae();
         std::cout << "****Weighted average ef: " << (size_t)wae << std::endl;
         size_t statics_length = 1 + 32 + 31 * 32; // 2-hop neighbors on the base layer: M = 16
@@ -1389,7 +1441,7 @@ int main()
     // indexing_exp(); // indexes are precomputed, uncomment to run if needed
     // functions for computing groundtruth: compute_groundtruth_laion_text2image and compute_and_save_gound_truth
 
-    // offline_exp();          // offline computation of estimator, samplings, and ef-adaptor
+    offline_exp();          // offline computation of estimator, samplings, and ef-adaptor
     online_exp();           // onine search experiments
     // sensitivity_analysis(); // sensitivity analysis for estimator parameters, including k and recall target
 

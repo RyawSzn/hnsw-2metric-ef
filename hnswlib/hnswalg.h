@@ -1375,11 +1375,11 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         bool bare_bone_search = !num_deleted_ && !isIdAllowed;
         if (bare_bone_search) {
             base_layer_result = adaptiveSearchBaseLayerST<true>(
-                    currObj, query_data, std::max(ef_, k), statics_length, score_calculator, sketch, isIdAllowed);
+                    currObj, query_data, std::max(ef_, k), statics_length, score_calculator, sketch, curdist, isIdAllowed);
             top_candidates = std::move(base_layer_result.first);
         } else {
             base_layer_result = adaptiveSearchBaseLayerST<false>(
-                    currObj, query_data, std::max(ef_, k), statics_length, score_calculator, sketch, isIdAllowed);
+                    currObj, query_data, std::max(ef_, k), statics_length, score_calculator, sketch, curdist, isIdAllowed);
             top_candidates = std::move(base_layer_result.first);
         }
 
@@ -1405,6 +1405,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         size_t statics_length,
         const hnswdis::ApproximatedScoreCalculator& score_calculator,
         hnswdis::Sketch* sketch,
+        dist_t d_ep = 0,
         BaseFilterFunctor* isIdAllowed = nullptr,
         BaseSearchStopCondition<dist_t>* stop_condition = nullptr,
         bool print_ef = false
@@ -1510,7 +1511,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                         flag_collect_statistics = false;
                         score = score_calculator.compute_score(data_point, *((size_t *) dist_func_param_), edge_evals.data(), edge_evals.size());
                         if (sketch) {
-                            ef = sketch->estimate_ef2(score); // used for estimating ef
+                            ef = sketch->estimate_ef2(score, d_ep); // used for estimating ef
                             if (ef < ef_copy) {
                                 ef = ef_copy;
                             }
@@ -1636,11 +1637,11 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
 
         if (bare_bone_search) {
             top_candidates = adaptiveSearchBaseLayerST2<true>(
-                    currObj, query_data, std::max(ef_, k), statics_length, score_calculator, sketch, isIdAllowed);
+                    currObj, query_data, std::max(ef_, k), statics_length, score_calculator, sketch, curdist, isIdAllowed);
 
         } else {
             top_candidates = adaptiveSearchBaseLayerST2<false>(
-                    currObj, query_data, std::max(ef_, k), statics_length, score_calculator, sketch, isIdAllowed);
+                    currObj, query_data, std::max(ef_, k), statics_length, score_calculator, sketch, curdist, isIdAllowed);
 
         }
 
@@ -1666,6 +1667,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         size_t statics_length,
         const hnswdis::ApproximatedScoreCalculator& score_calculator,
         hnswdis::Sketch* sketch,
+        dist_t d_ep = 0,
         BaseFilterFunctor* isIdAllowed = nullptr,
         BaseSearchStopCondition<dist_t>* stop_condition = nullptr) const {
 
@@ -1769,7 +1771,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                         flag_collect_statistics = false;
                         score = score_calculator.compute_score(data_point, *((size_t *) dist_func_param_), edge_evals.data(), edge_evals.size());
                         if (sketch) {
-                            ef = sketch->estimate_ef2(score);  // get estimated ef
+                            ef = sketch->estimate_ef2(score, d_ep);  // get estimated ef
                             if (ef < ef_copy) {
                                 ef = ef_copy;
                             }
@@ -2178,6 +2180,26 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
             std::cout << "Min inbound: " << min1 << ", Max inbound:" << max1 << "\n";
         }
         std::cout << "integrity ok, checked " << connections_checked << " connections\n";
+    }
+
+    dist_t computeEntryPointDistance(const void *query_data) const {
+        tableint currObj = enterpoint_node_;
+        dist_t curdist = fstdistfunc_(query_data, getDataByInternalId(enterpoint_node_), dist_func_param_);
+        for (int level = maxlevel_; level > 0; level--) {
+            bool changed = true;
+            while (changed) {
+                changed = false;
+                unsigned int *data = (unsigned int *) get_linklist(currObj, level);
+                int size = getListCount(data);
+                tableint *datal = (tableint *) (data + 1);
+                for (int i = 0; i < size; i++) {
+                    tableint cand = datal[i];
+                    dist_t d = fstdistfunc_(query_data, getDataByInternalId(cand), dist_func_param_);
+                    if (d < curdist) { curdist = d; currObj = cand; changed = true; }
+                }
+            }
+        }
+        return curdist;
     }
 };
 }  // namespace hnswlib

@@ -7,133 +7,155 @@
 
 namespace hnswdis
 {
+    using EfRecallTable = std::vector<std::pair<int, std::vector<std::pair<int, float>>>>;
+
     class Sketch
     {
     private:
-        const std::vector<std::pair<int, std::vector<std::pair<int, float>>>> &ef_recall_estimators; // score, {(ef, recall)}, sorted by score
-        const float expected_recall;
-        std::vector<int> links;
+        const EfRecallTable *ef_recall_estimators_single{nullptr};
 
-    public:
-        Sketch(
-            const std::vector<std::pair<int, std::vector<std::pair<int, float>>>> &ef_recall_estimators,
-            const float expected_recall) : ef_recall_estimators(ef_recall_estimators), expected_recall(expected_recall)
+        const std::vector<EfRecallTable> *tables_{nullptr};
+        // dep_thresholds_[i] is the upper boundary of bucket i (d_ep < threshold[i] → bucket i).
+        // size == tables_.size() - 1; last bucket has no upper bound.
+        const std::vector<float>         *dep_thresholds_{nullptr};
+
+        const float expected_recall;
+
+        std::vector<std::vector<int>> all_links;
+
+        static std::vector<int> build_links(const EfRecallTable &table)
         {
-            links.resize(101);
+            std::vector<int> links(101);
             int index = 0;
             for (int i = 0; i <= 100; ++i)
             {
-                // Find the first element that is not smaller than `i` (b)
-                while (index < ef_recall_estimators.size() && ef_recall_estimators[index].first < i)
-                {
+                while (index < (int)table.size() && table[index].first < i)
                     ++index;
-                }
 
-                // Determine `a` and `b`
-                int a_index = (index > 0) ? index - 1 : -1;                       // Last smaller or equal element
-                int b_index = (index < ef_recall_estimators.size()) ? index : -1; // First larger or equal element
+                int a_index = (index > 0) ? index - 1 : -1;
+                int b_index = (index < (int)table.size()) ? index : -1;
 
-                // Choose the closest one to `i`
                 if (a_index != -1 && b_index != -1)
                 {
-                    // Both `a` and `b` exist, compare distances
-                    if (std::abs(ef_recall_estimators[a_index].first - i) <= std::abs(ef_recall_estimators[b_index].first - i))
-                    {
-                        links[i] = a_index;
-                    }
-                    else
-                    {
-                        links[i] = b_index;
-                    }
+                    links[i] = (std::abs(table[a_index].first - i) <= std::abs(table[b_index].first - i))
+                                   ? a_index : b_index;
                 }
-                else if (a_index != -1)
-                {
-                    // Only `a` exists
-                    links[i] = a_index;
-                }
-                else if (b_index != -1)
-                {
-                    // Only `b` exists
-                    links[i] = b_index;
-                }
+                else if (a_index != -1) { links[i] = a_index; }
+                else                    { links[i] = b_index; }
             }
+            return links;
         }
 
-        size_t get_entry(float score)
+        size_t lookup_ef(const EfRecallTable &table,
+                         const std::vector<int> &links,
+                         float score) const
         {
-            auto entry = std::lower_bound(ef_recall_estimators.begin(), ef_recall_estimators.end(), score, [](const auto &a, const float &b)
-                                          { return a.first < b; });
+            int clamped = static_cast<int>(score);
+            if (clamped < 0)   clamped = 0;
+            if (clamped > 100) clamped = 100;
 
-            if (entry == ef_recall_estimators.begin())
-            {
-                entry = ef_recall_estimators.begin();
-            }
-            else if (entry == ef_recall_estimators.end())
-            {
-                entry = std::prev(ef_recall_estimators.end());
-            }
-
-            for (const auto &ef_recall : entry->second)
-            {
-                if (ef_recall.second >= expected_recall)
-                {
-                    return ef_recall.first;
-                }
-            }
-
-            return entry->second.back().first;
-        }
-
-        size_t estimate_ef(float score) // deprecated
-        {
-            int index = links[(int)(score)];
-            const auto &ef_recalls = ef_recall_estimators[index].second;
-            for (const auto &ef_recall : ef_recalls)
-            {
-                if (ef_recall.second >= expected_recall)
-                {
-                    return ef_recall.first;
-                }
-            }
+            int index = links[clamped];
+            const auto &ef_recalls = table[index].second;
+            for (const auto &er : ef_recalls)
+                if (er.second >= expected_recall)
+                    return er.first;
             return ef_recalls.back().first;
         }
 
-        size_t estimate_ef2(float score)
+        int dep_bucket(float d_ep) const
         {
-            size_t first = estimate_ef(score);
-
-            if (score < 1 || score >= 100)
-            {
-                return first;
-            }
-
-            size_t second = estimate_ef(score - 1);
-            size_t third = estimate_ef(score + 1);
-
-            //Compute the median of the three values
-            // return first + second + third - std::max({first, second, third}) - std::min({first, second, third});
-
-            // Compute the average of the three values
-            return (first + second + third) / 3;
+            for (int i = 0; i < (int)dep_thresholds_->size(); ++i)
+                if (d_ep < (*dep_thresholds_)[i])
+                    return i;
+            return static_cast<int>(dep_thresholds_->size());
         }
 
-        void print()
+        size_t smoothed_ef(const EfRecallTable &table,
+                           const std::vector<int> &links,
+                           float score) const
         {
-            std::cout << "Links: ";
-            for (const auto &link : links)
-            {
-                std::cout << link << " ";
-            }
-            std::cout << std::endl;
+            size_t first = lookup_ef(table, links, score);
+            if (score < 1 || score >= 100)
+                return first;
+            return (first + lookup_ef(table, links, score - 1) + lookup_ef(table, links, score + 1)) / 3;
+        }
 
-            for (const auto &ef_recall : ef_recall_estimators)
+    public:
+        Sketch(const EfRecallTable &ef_recall_estimators,
+               float expected_recall)
+            : ef_recall_estimators_single(&ef_recall_estimators),
+              expected_recall(expected_recall)
+        {
+            all_links.push_back(build_links(ef_recall_estimators));
+        }
+
+        Sketch(const std::vector<EfRecallTable> &tables,
+               const std::vector<float>         &dep_thresholds,
+               float expected_recall)
+            : tables_(&tables),
+              dep_thresholds_(&dep_thresholds),
+              expected_recall(expected_recall)
+        {
+            all_links.reserve(tables.size());
+            for (const auto &t : tables)
+                all_links.push_back(build_links(t));
+        }
+
+        size_t estimate_ef2(float score, float d_ep = 0) const
+        {
+            if (tables_ != nullptr)
             {
-                std::cout << "Score: " << ef_recall.first << std::endl;
-                for (const auto &pair : ef_recall.second)
+                int bucket = dep_bucket(d_ep);
+                return smoothed_ef((*tables_)[bucket], all_links[bucket], score);
+            }
+            return smoothed_ef(*ef_recall_estimators_single, all_links[0], score);
+        }
+
+        size_t estimate_ef(float score) const
+        {
+            if (tables_ != nullptr)
+                return lookup_ef((*tables_)[0], all_links[0], score);
+            return lookup_ef(*ef_recall_estimators_single, all_links[0], score);
+        }
+
+        size_t get_entry(float score) const
+        {
+            const EfRecallTable &table = tables_ ? (*tables_)[0] : *ef_recall_estimators_single;
+            auto entry = std::lower_bound(table.begin(), table.end(), score,
+                                          [](const auto &a, float b) { return a.first < b; });
+            if (entry == table.begin())       entry = table.begin();
+            else if (entry == table.end())    entry = std::prev(table.end());
+            for (const auto &er : entry->second)
+                if (er.second >= expected_recall)
+                    return er.first;
+            return entry->second.back().first;
+        }
+
+        void print() const
+        {
+            auto print_table = [](const EfRecallTable &t) {
+                for (const auto &entry : t)
                 {
-                    std::cout << "ef: " << pair.first << ", recall: " << pair.second << std::endl;
+                    std::cout << "Score: " << entry.first << std::endl;
+                    for (const auto &p : entry.second)
+                        std::cout << "  ef: " << p.first << ", recall: " << p.second << std::endl;
+                }
+            };
+
+            if (tables_ != nullptr)
+            {
+                for (int i = 0; i < (int)tables_->size(); ++i)
+                {
+                    float lo = (i == 0) ? 0.0f : (*dep_thresholds_)[i - 1];
+                    float hi = (i < (int)dep_thresholds_->size())
+                                   ? (*dep_thresholds_)[i]
+                                   : std::numeric_limits<float>::infinity();
+                    std::cout << "=== d_ep bucket " << i
+                              << " [" << lo << ", " << hi << ") ===" << std::endl;
+                    print_table((*tables_)[i]);
                 }
             }
+            else { print_table(*ef_recall_estimators_single); }
         }
     };
 }
