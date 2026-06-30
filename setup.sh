@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-2METRIC_EF_ROOT="${1:-${2METRIC_EF_ROOT:-$(pwd)}}"
-EXPERIMENTS_ROOT="$EXPERIMENTS_ROOT"
+EXPERIMENTS_ROOT="/home/ryawszn/experiments/2metric"
 
 mkdir -p "$EXPERIMENTS_ROOT"
 
 dirs=(
-  2metric
   index
   data
   estimation_table
