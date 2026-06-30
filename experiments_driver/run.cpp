@@ -86,7 +86,7 @@ void online_exp()
     std::vector<std::tuple<std::string, std::string, float, int>> dataset_metrics = {
         {"deep-image-96-angular", "cd", 1e-3, 100},
         {"glove-100-angular", "cd", 1e-3, 100},
-        // {"sift-128-euclidean", "l2", 1e-3, 100},
+        {"sift-128-euclidean", "l2", 1e-3, 100},
         // {"msmarco", "cd", 1e-3, 1000},
         // {"cohere", "cd", 1e-3, 1000},
         // {"laion_image", "cd", 1e-3, 1000}, // image to image retrieval
@@ -165,7 +165,7 @@ void indexing_exp()
     std::vector<std::pair<std::string, std::string>> dataset_metrics = {
         {"deep-image-96-angular", "cd"},
         {"glove-100-angular", "cd"},
-        // {"sift-128-euclidean", "l2"},
+        {"sift-128-euclidean", "l2"},
         // {"msmarco", "cd"},
         // {"cohere", "cd"},
         // {"laion_image", "cd"},
@@ -272,7 +272,7 @@ void offline_exp()
     std::vector<std::tuple<std::string, std::string, float>> dataset_metrics = {
         {"deep-image-96-angular", "cd", 1e-3},
         {"glove-100-angular", "cd", 1e-3},
-        // {"sift-128-euclidean", "l2", 1e-3},
+        {"sift-128-euclidean", "l2", 1e-3},
         // {"msmarco", "cd", 1e-3},
         // {"cohere", "cd", 1e-3},
         // {"laion_image", "cd", 1e-3},
@@ -1348,7 +1348,7 @@ void per_query_result_exp()
     std::vector<std::tuple<std::string, std::string, float, int>> dataset_metrics = {
         {"deep-image-96-angular", "cd", 1e-3, 100},
         {"glove-100-angular", "cd", 1e-3, 100},
-        // {"sift-128-euclidean", "l2", 1e-3, 100},
+        {"sift-128-euclidean", "l2", 1e-3, 100},
         // {"msmarco", "cd", 1e-3, 1000},
         // {"cohere", "cd", 1e-3, 1000},
         // {"laion_image", "cd", 1e-3, 1000}, // image to image retrieval
