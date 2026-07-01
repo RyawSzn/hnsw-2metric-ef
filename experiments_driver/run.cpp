@@ -83,15 +83,15 @@ void online_exp()
     Eigen::setNbThreads(std::max(1u, std::thread::hardware_concurrency() / 4)); // Limit to 1/4 available threads for eigen parallelization in ada-ef offline computation
 
     std::vector<std::tuple<std::string, std::string, float, int>> dataset_metrics = {
-        // {"deep-image-96-angular", "cd", 0.75f, 100},
-        {"glove-100-angular", "cd", 0.75f, 100},
-        // {"sift-128-euclidean", "l2", 0.75f, 100},
-        // {"msmarco", "cd", 0.75f, 1000},
-        // {"cohere", "cd", 0.75f, 1000},
-        // {"laion_image", "cd", 0.75f, 1000}, // image to image retrieval
-        // {"laion_text", "cd", 0.75f, 1000},  // text to image retrieval
-        // {"cluster_mg_uniform_100d", "cd", 0.75f, 1000},
-        // {"cluster_mg_zipf_100d", "cd", 0.75f, 1000}
+        // {"deep-image-96-angular", "cd", 0.25f, 100},
+        {"glove-100-angular", "cd", 0.25f, 100},
+        // {"sift-128-euclidean", "l2", 0.25f, 100},
+        // {"msmarco", "cd", 0.25f, 1000},
+        // {"cohere", "cd", 0.25f, 1000},
+        // {"laion_image", "cd", 0.25f, 1000}, // image to image retrieval
+        // {"laion_text", "cd", 0.25f, 1000},  // text to image retrieval
+        // {"cluster_mg_uniform_100d", "cd", 0.251f, 1000},
+        // {"cluster_mg_zipf_100d", "cd", 0.25f, 1000}
     };
 
     for (const auto [dataset, metric, truncation_ratio, k] : dataset_metrics)
@@ -208,7 +208,7 @@ void offline_laion_text2image()
     std::cout << "Data size of space:" << space->get_data_size() << std::endl;
 
     float expected_recall = 0.95;
-    float truncation_ratio = 0.75f;
+    float truncation_ratio = 0.25f;
     int sampling_size = 2000;
     int ef_upper_bound = 5000;
     int k = 1000;
@@ -269,15 +269,15 @@ void offline_exp()
     Eigen::setNbThreads(std::max(1u, std::thread::hardware_concurrency() / 4)); // Limit to 1/4 of all available threads
 
     std::vector<std::tuple<std::string, std::string, float>> dataset_metrics = {
-        // {"deep-image-96-angular", "cd", 0.75f},
-        {"glove-100-angular", "cd", 0.75f},
-        // {"sift-128-euclidean", "l2", 0.75f},
-        // {"msmarco", "cd", 0.75f},
-        // {"cohere", "cd", 0.75f},
-        // {"laion_image", "cd", 0.75f},
-        // {"laion_text", "cd", 0.75f},
-        // {"cluster_mg_uniform_100d", "cd", 0.75f},
-        // {"cluster_mg_zipf_100d", "cd", 0.75f}
+        // {"deep-image-96-angular", "cd", 0.25f},
+        {"glove-100-angular", "cd", 0.25f},
+        // {"sift-128-euclidean", "l2", 0.25f},
+        // {"msmarco", "cd", 0.25f},
+        // {"cohere", "cd", 0.25f},
+        // {"laion_image", "cd", 0.25f},
+        // {"laion_text", "cd", 0.25f},
+        // {"cluster_mg_uniform_100d", "cd", 0.25f},
+        // {"cluster_mg_zipf_100d", "cd", 0.25f}
     };
 
     for (const auto [dataset, metric, truncation_ratio] : dataset_metrics)
@@ -402,7 +402,7 @@ void sensitivity_analysis()
     for (const std::string &dataset : datasets)
     {
         std::string metric = "cd";
-        float truncation_ratio = 0.75f;
+        float truncation_ratio = 0.25f;
         std::vector<int> list_k = {1000, 500, 100}; // in descending order so that we can reuse samplings and estimators more effectively
         std::vector<float> expected_recalls = {0.95, 0.97, 0.99};
         int ef_upper_bound = 5000;
@@ -532,7 +532,7 @@ void insert_exp_setup(
     float expected_recall = 0.95;
     int sampling_size = 2000;
     int ef_upper_bound = 5000;
-    float truncation_ratio = 0.75f;
+    float truncation_ratio = 0.25f;
     size_t statics_length = 1 + 32 + 31 * 32; // 2-hop neighbors on the base layer: M = 16
 
     start = std::chrono::high_resolution_clock::now();
@@ -668,7 +668,7 @@ void insert_exp(bool setup = false)
     };
 
     const float expected_recall = 0.95;
-    const float truncation_ratio = 0.75f;
+    const float truncation_ratio = 0.25f;
     const int ef_upper_bound = 5000;
     size_t statics_length = 1 + 32 + 31 * 32; // 2-hop neighbors on the base layer: M = 16
 
@@ -836,7 +836,7 @@ void delete_exp_setup(
         float expected_recall = 0.95;
         int sampling_size = 2000;
         int ef_upper_bound = 5000;
-        float truncation_ratio = 0.75f;
+        float truncation_ratio = 0.25f;
         size_t statics_length = 1 + 32 + 31 * 32; // 2-hop neighbors on the base layer: M = 16
 
         std::shared_ptr<hnswdis::MatrixXf> after_updates_data_ptr = std::make_shared<hnswdis::MatrixXf>(after_updates_data);
@@ -941,7 +941,7 @@ void delete_exp(bool setup = false)
     };
 
     const float expected_recall = 0.95;
-    const float truncation_ratio = 0.75f;
+    const float truncation_ratio = 0.25f;
     const int ef_upper_bound = 5000;
     size_t statics_length = 1 + 32 + 31 * 32; // 2-hop neighbors on the base layer: M = 16
 
@@ -1086,8 +1086,8 @@ void ablation_study_distance_list_size()
     Eigen::setNbThreads(std::max(1u, std::thread::hardware_concurrency() / 4)); // Limit to 1/4 available threads for eigen parallelization in ada-ef offline computation
 
     std::vector<std::tuple<std::string, std::string, float, int>> dataset_metrics = {
-        {"deep-image-96-angular", "cd", 0.75f, 100},
-        {"cohere", "cd", 0.75f, 1000}};
+        {"deep-image-96-angular", "cd", 0.25f, 100},
+        {"cohere", "cd", 0.25f, 1000}};
 
     std::vector<int> distance_list_sizes = {
         1 + 32,                          // 1-hop neighbors on the base layer: M = 16
@@ -1170,8 +1170,8 @@ void ablation_study_sampling_size()
     Eigen::setNbThreads(std::max(1u, std::thread::hardware_concurrency() / 4)); // Limit to 1/4 available threads for eigen parallelization in ada-ef offline computation
 
     std::vector<std::tuple<std::string, std::string, float, int>> dataset_metrics = {
-        {"deep-image-96-angular", "cd", 0.75f, 100},
-        {"cohere", "cd", 0.75f, 1000}};
+        {"deep-image-96-angular", "cd", 0.25f, 100},
+        {"cohere", "cd", 0.25f, 1000}};
 
     std::vector<int> sampling_size = {
         // from larger to smaller, reuse samplings for experiments
@@ -1259,15 +1259,15 @@ void per_query_result_exp()
     Eigen::setNbThreads(std::max(1u, std::thread::hardware_concurrency() / 4)); // Limit to 1/4 available threads for eigen parallelization in ada-ef offline computation
 
     std::vector<std::tuple<std::string, std::string, float, int>> dataset_metrics = {
-        {"deep-image-96-angular", "cd", 0.75f, 100},
-        {"glove-100-angular", "cd", 0.75f, 100},
-        {"sift-128-euclidean", "l2", 0.75f, 100},
-        // {"msmarco", "cd", 0.75f, 1000},
-        // {"cohere", "cd", 0.75f, 1000},
-        // {"laion_image", "cd", 0.75f, 1000}, // image to image retrieval
-        // {"laion_text", "cd", 0.75f, 1000},  // text to image retrieval
-        // {"cluster_mg_uniform_100d", "cd", 0.75f, 1000},
-        // {"cluster_mg_zipf_100d", "cd", 0.75f, 1000}
+        {"deep-image-96-angular", "cd", 0.25f, 100},
+        {"glove-100-angular", "cd", 0.25f, 100},
+        {"sift-128-euclidean", "l2", 0.25f, 100},
+        // {"msmarco", "cd", 0.25f, 1000},
+        // {"cohere", "cd", 0.25f, 1000},
+        // {"laion_image", "cd", 0.25f, 1000}, // image to image retrieval
+        // {"laion_text", "cd", 0.25f, 1000},  // text to image retrieval
+        // {"cluster_mg_uniform_100d", "cd", 0.25f, 1000},
+        // {"cluster_mg_zipf_100d", "cd", 0.25f, 1000}
     };
 
     for (const auto [dataset, metric, truncation_ratio, k] : dataset_metrics)
@@ -1354,7 +1354,7 @@ int main()
     // indexing_exp(); // indexes are precomputed, uncomment to run if needed
     // functions for computing groundtruth: compute_groundtruth_laion_text2image and compute_and_save_gound_truth
 
-    offline_exp();          // offline computation of estimator, samplings, and ef-adaptor
+    // offline_exp();          // offline computation of estimator, samplings, and ef-adaptor
     online_exp();           // onine search experiments
     // sensitivity_analysis(); // sensitivity analysis for estimator parameters, including k and recall target
 

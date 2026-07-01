@@ -29,7 +29,7 @@ namespace hnswdis
 
     public:
         ApproximatedScoreCalculator(
-            float truncation_ratio = 0.75f
+            float truncation_ratio = 0.25f
         ) : truncation_ratio(truncation_ratio)
         {
         }

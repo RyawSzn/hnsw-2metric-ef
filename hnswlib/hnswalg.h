@@ -1533,7 +1533,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                         flag_collect_statistics = false;
                         score = score_calculator.compute_score(data_point, *((size_t *) dist_func_param_), edge_evals.data(), edge_evals.size());
                         if (sketch) {
-                            ef = sketch->estimate_ef2(score, d_ep - lowerBound); // used for estimating ef
+                            ef = sketch->estimate_ef2(score, d_ep); // used for estimating ef
                             if (ef < ef_copy) {
                                 ef = ef_copy;
                             }
@@ -2084,18 +2084,18 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                 // 1. Extract the current top-k subset from top_candidates
                 const auto& underlying = get_container(top_candidates);
                 current_topk_ids.clear();
-                
+
                 // underlying contains up to ef elements
                 // We want the k elements with smallest distance.
                 // top_candidates uses CompareByFirst, which is max-heap, so smaller distance means smaller in compare logic.
                 // We copy the vector.
                 std::vector<std::pair<dist_t, tableint>> tmp(underlying.begin(), underlying.end());
-                
+
                 if (tmp.size() > k) {
                     std::nth_element(tmp.begin(), tmp.begin() + k, tmp.end(), CompareByFirst());
                     tmp.resize(k);
                 }
-                
+
                 for (size_t i = 0; i < tmp.size(); i++) {
                     current_topk_ids.push_back(tmp[i].second);
                 }
