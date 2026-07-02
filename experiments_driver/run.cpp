@@ -84,8 +84,8 @@ void online_exp()
 
     std::vector<std::tuple<std::string, std::string, float, int>> dataset_metrics = {
         // {"deep-image-96-angular", "cd", 0.25f, 100},
-        {"glove-100-angular", "cd", 0.25f, 100},
-        // {"sift-128-euclidean", "l2", 0.25f, 100},
+        // {"glove-100-angular", "cd", 0.25f, 100},
+        {"sift-128-euclidean", "l2", 0.25f, 100},
         // {"msmarco", "cd", 0.25f, 1000},
         // {"cohere", "cd", 0.25f, 1000},
         // {"laion_image", "cd", 0.25f, 1000}, // image to image retrieval
@@ -270,8 +270,8 @@ void offline_exp()
 
     std::vector<std::tuple<std::string, std::string, float>> dataset_metrics = {
         // {"deep-image-96-angular", "cd", 0.25f},
-        {"glove-100-angular", "cd", 0.25f},
-        // {"sift-128-euclidean", "l2", 0.25f},
+        // {"glove-100-angular", "cd", 0.25f},
+        {"sift-128-euclidean", "l2", 0.25f},
         // {"msmarco", "cd", 0.25f},
         // {"cohere", "cd", 0.25f},
         // {"laion_image", "cd", 0.25f},
@@ -403,7 +403,7 @@ void sensitivity_analysis()
     {
         std::string metric = "cd";
         float truncation_ratio = 0.25f;
-        std::vector<int> list_k = {1000, 500, 100}; // in descending order so that we can reuse samplings and estimators more effectively
+        std::vector<int> list_k = {1000, 100, 50}; // in descending order so that we can reuse samplings and estimators more effectively
         std::vector<float> expected_recalls = {0.95, 0.97, 0.99};
         int ef_upper_bound = 5000;
         size_t statics_length = 1 + 32 + 31 * 32; // 2-hop neighbors on the base layer: M = 16
