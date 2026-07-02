@@ -1537,6 +1537,9 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                             if (ef < ef_copy) {
                                 ef = ef_copy;
                             }
+                            if (ef > ef_copy * 3) {
+                                ef = ef_copy * 3;
+                            }
                         } else {
                             ef = ef_copy;
                         }
@@ -1801,6 +1804,9 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                             ef = sketch->estimate_ef2(score, d_ep);  // get estimated ef
                             if (ef < ef_copy) {
                                 ef = ef_copy;
+                            }
+                            if (ef > ef_copy * 3) {
+                                ef = ef_copy * 3;
                             }
                         } else {
                             ef = ef_copy;
