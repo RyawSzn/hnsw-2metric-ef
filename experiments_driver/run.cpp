@@ -7,12 +7,12 @@ static constexpr int N_DEP_TABLES = 10;
 
 static hnswdis::Sketch make_sketch(const hnswdis::EfAdapter &adapter, float expected_recall)
 {
-    if (adapter.has_dep_tables())
-        return hnswdis::Sketch(adapter.get_all_tables(), adapter.get_dep_centers(), expected_recall);
+    if (adapter.has_cv_tables())
+        return hnswdis::Sketch(adapter.get_all_tables(), adapter.get_cv_centers(), expected_recall);
     return hnswdis::Sketch(adapter.get_ef_recall_estimators(), expected_recall);
 }
 
-static void train_dep_buckets(
+static void train_cv_buckets(
     hnswdis::EfAdapter &adapter,
     const std::shared_ptr<hnswlib::HierarchicalNSW<float>> hnsw,
     const std::shared_ptr<hnswdis::MatrixXf> data,
@@ -24,7 +24,7 @@ static void train_dep_buckets(
     const std::shared_ptr<hnswdis::MatrixXi> ground_truth,
     const int ef_upper_bound)
 {
-    adapter.init_with_dep_buckets(
+    adapter.init_with_cv_buckets(
         hnsw, data, k, metric, truncation_ratio, statics_length,
         query_vectors, ground_truth,
         N_DEP_TABLES);
@@ -84,8 +84,8 @@ void online_exp()
 
     std::vector<std::tuple<std::string, std::string, float, int>> dataset_metrics = {
         // {"deep-image-96-angular", "cd", 0.25f, 100},
-        // {"glove-100-angular", "cd", 0.25f, 100},
-        {"sift-128-euclidean", "l2", 0.25f, 100},
+        {"glove-100-angular", "cd", 0.25f, 100},
+        // {"sift-128-euclidean", "l2", 0.25f, 100},
         // {"msmarco", "cd", 0.25f, 1000},
         // {"cohere", "cd", 0.25f, 1000},
         // {"laion_image", "cd", 0.25f, 1000}, // image to image retrieval
@@ -252,7 +252,7 @@ void offline_laion_text2image()
         {
             hnswdis::MatrixXf _sq; hnswdis::MatrixXi _sgt;
             hnswdis::deserialize_samplings(samplings_path, _sq, _sgt);
-            train_dep_buckets(ef_adapter, hnsw, data,
+            train_cv_buckets(ef_adapter, hnsw, data,
                 k, "cd", truncation_ratio, statics_length,
                 std::make_shared<hnswdis::MatrixXf>(_sq),
                 std::make_shared<hnswdis::MatrixXi>(_sgt),
@@ -270,8 +270,8 @@ void offline_exp()
 
     std::vector<std::tuple<std::string, std::string, float>> dataset_metrics = {
         // {"deep-image-96-angular", "cd", 0.25f},
-        // {"glove-100-angular", "cd", 0.25f},
-        {"sift-128-euclidean", "l2", 0.25f},
+        {"glove-100-angular", "cd", 0.25f},
+        // {"sift-128-euclidean", "l2", 0.25f},
         // {"msmarco", "cd", 0.25f},
         // {"cohere", "cd", 0.25f},
         // {"laion_image", "cd", 0.25f},
@@ -354,7 +354,7 @@ void offline_exp()
             {
                 hnswdis::MatrixXf _sq; hnswdis::MatrixXi _sgt;
                 hnswdis::deserialize_samplings(samplings_path, _sq, _sgt);
-                train_dep_buckets(ef_adapter, hnsw, data,
+                train_cv_buckets(ef_adapter, hnsw, data,
                     k, metric, truncation_ratio, statics_length,
                     std::make_shared<hnswdis::MatrixXf>(_sq),
                     std::make_shared<hnswdis::MatrixXi>(_sgt),
@@ -540,7 +540,7 @@ void insert_exp_setup(
     end = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     std::cout << "EF-estimation table computing time: " << duration.count() << " ms" << std::endl;
-    train_dep_buckets(ef_adapter, alg_hnsw, before_data_ptr,
+    train_cv_buckets(ef_adapter, alg_hnsw, before_data_ptr,
         k, metric, truncation_ratio, statics_length,
         sample_query_vectors, std::make_shared<hnswdis::MatrixXi>(sample_ground_truth),
         ef_upper_bound);
@@ -646,7 +646,7 @@ void insert_exp_adaef_update(
         duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         std::cout << "EF-estimation table computing time: " << duration.count() << " ms" << std::endl;
         std::string updated_ef_adaptor_path = (root / "incremental_update" / batch_type / (dataset + "-ef_adaptor-" + "-k" + std::to_string(k) + "-ef-updated.bin")).string();
-        train_dep_buckets(ef_adapter, alg_hnsw, full_data_ptr,
+        train_cv_buckets(ef_adapter, alg_hnsw, full_data_ptr,
             k, metric, truncation_ratio, statics_length,
             sample_query_vectors_ptr, sample_ground_truth_ptr,
             ef_upper_bound);
@@ -846,7 +846,7 @@ void delete_exp_setup(
         end = std::chrono::high_resolution_clock::now();
         duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         std::cout << "EF-estimation table computing time: " << duration.count() << " ms" << std::endl;
-        train_dep_buckets(ef_adapter, alg_hnsw, after_updates_data_ptr,
+        train_cv_buckets(ef_adapter, alg_hnsw, after_updates_data_ptr,
             k, metric, truncation_ratio, statics_length,
             sample_query_vectors, sample_ground_truth_ptr,
             ef_upper_bound);
@@ -921,7 +921,7 @@ void delete_exp_adaef_update(
     duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     std::cout << "EF-estimation table computing time: " << duration.count() << " ms" << std::endl;
     std::string updated_ef_adaptor_path = (root / "incremental_deletion" / batch_type / (dataset + "-ef_adaptor-" + "-k" + std::to_string(k) + "-ef-updated.bin")).string();
-    train_dep_buckets(ef_adapter, alg_hnsw, after_updates_data_ptr,
+    train_cv_buckets(ef_adapter, alg_hnsw, after_updates_data_ptr,
         k, metric, truncation_ratio, statics_length,
         sample_query_vectors_ptr, sample_ground_truth_ptr,
         ef_upper_bound);
@@ -1148,7 +1148,7 @@ void ablation_study_distance_list_size()
             auto end = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
             std::cout << "EF-estimation table computing time: " << duration << " ms" << std::endl;
-            train_dep_buckets(ef_adapter, hnsw, data,
+            train_cv_buckets(ef_adapter, hnsw, data,
                 k, metric, truncation_ratio, statics_length,
                 std::make_shared<hnswdis::MatrixXf>(sample_query_vectors), std::make_shared<hnswdis::MatrixXi>(sample_ground_truth),
                 ef_upper_bound);
@@ -1233,7 +1233,7 @@ void ablation_study_sampling_size()
             end = std::chrono::high_resolution_clock::now();
             duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
             std::cout << "EF-estimation table computing time: " << duration << " ms" << std::endl;
-            train_dep_buckets(ef_adapter, hnsw, data,
+            train_cv_buckets(ef_adapter, hnsw, data,
                 k, metric, truncation_ratio, statics_length,
                 std::make_shared<hnswdis::MatrixXf>(pair.first), std::make_shared<hnswdis::MatrixXi>(pair.second),
                 ef_upper_bound);
@@ -1353,7 +1353,7 @@ void dump_deepIm_recall() {
     auto ground_truth = std::get<3>(tuple_res);
 
     hnsw->setEf(ef);
-    
+
     std::vector<std::vector<size_t>> result;
     for (int j = 0; j < query->rows(); ++j) {
         result.push_back(std::vector<size_t>(k, 0));

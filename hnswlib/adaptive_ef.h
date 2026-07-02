@@ -1133,23 +1133,29 @@ namespace hnswdis
     private:
         EfRecallTable ef_recall_estimators;
 
-        std::vector<EfRecallTable> dep_tables;
-        std::vector<float>         dep_centers;
+        std::vector<EfRecallTable> cv_tables;
+        std::vector<float>         cv_centers;
 
         float expected_recall;
         float wae;
         int ef_upper_bound;
 
         // Collect d_ep for every query by running the greedy upper-layer search only.
-        static std::vector<float> collect_dep(
+        static std::vector<float> collect_cv(
             const hnswlib::HierarchicalNSW<float> &alg_hnsw,
-            const MatrixXf &query_vectors)
+            const MatrixXf &query_vectors,
+            const hnswdis::ApproximatedScoreCalculator &score_cal,
+            const size_t k,
+            const size_t statics_length)
         {
-            std::vector<float> deps;
-            deps.reserve(query_vectors.rows());
-            for (int i = 0; i < query_vectors.rows(); ++i)
-                deps.push_back(alg_hnsw.computeEntryPointDistance(query_vectors.row(i).data()));
-            return deps;
+            std::vector<float> cvs;
+            cvs.reserve(query_vectors.rows());
+            for (int i = 0; i < query_vectors.rows(); ++i) {
+                float cv = 0.0f;
+                alg_hnsw.adaptiveSearchKnn(query_vectors.row(i).data(), k, statics_length, score_cal, nullptr, &cv);
+                cvs.push_back(cv);
+            }
+            return cvs;
         }
 
         void init(const std::shared_ptr<hnswlib::HierarchicalNSW<float>> alg_hnsw,
@@ -1488,7 +1494,7 @@ namespace hnswdis
             deserialize(filename);
         }
 
-        void init_with_dep_buckets(
+        void init_with_cv_buckets(
             const std::shared_ptr<hnswlib::HierarchicalNSW<float>> alg_hnsw,
             const std::shared_ptr<hnswdis::MatrixXf> data_vectors,
             const size_t k,
@@ -1497,33 +1503,34 @@ namespace hnswdis
             const size_t statics_length,
             const std::shared_ptr<hnswdis::MatrixXf> query_vectors,
             const std::shared_ptr<hnswdis::MatrixXi> ground_truth_ptr,
-            const int n_dep_tables)
+            const int n_cv_tables)
         {
             const int n = query_vectors->rows();
 
-            std::vector<float> deps = collect_dep(*alg_hnsw, *query_vectors);
+            hnswdis::ApproximatedScoreCalculator score_cal(truncation_ratio);
+            std::vector<float> cvs = collect_cv(*alg_hnsw, *query_vectors, score_cal, k, statics_length);
 
             std::vector<int> order(n);
             std::iota(order.begin(), order.end(), 0);
-            std::sort(order.begin(), order.end(), [&](int a, int b) { return deps[a] < deps[b]; });
+            std::sort(order.begin(), order.end(), [&](int a, int b) { return cvs[a] < cvs[b]; });
 
-            int actual_n_dep_tables = std::max(1, n_dep_tables);
-            int chunk = n / actual_n_dep_tables;
+            int actual_n_cv_tables = std::max(1, n_cv_tables);
+            int chunk = n / actual_n_cv_tables;
 
-            dep_centers.clear();
-            for (int t = 0; t < actual_n_dep_tables; ++t) {
+            cv_centers.clear();
+            for (int t = 0; t < actual_n_cv_tables; ++t) {
                 int lo = t * chunk;
-                int hi = (t == actual_n_dep_tables - 1) ? n : (t + 1) * chunk;
-                dep_centers.push_back(deps[order[(lo + hi) / 2]]);
+                int hi = (t == actual_n_cv_tables - 1) ? n : (t + 1) * chunk;
+                cv_centers.push_back(cvs[order[(lo + hi) / 2]]);
             }
 
-            dep_tables.resize(actual_n_dep_tables);
+            cv_tables.resize(actual_n_cv_tables);
 
             float accumulated_wae = 0.0f;
-            for (int t = 0; t < actual_n_dep_tables; ++t)
+            for (int t = 0; t < actual_n_cv_tables; ++t)
             {
                 int lo = t * chunk;
-                int hi = (t == actual_n_dep_tables - 1) ? n : (t + 1) * chunk;
+                int hi = (t == actual_n_cv_tables - 1) ? n : (t + 1) * chunk;
 
                 int bucket_size = hi - lo;
                 MatrixXf bucket_queries(bucket_size, query_vectors->cols());
@@ -1534,9 +1541,9 @@ namespace hnswdis
                     bucket_gt.row(r)      = ground_truth_ptr->row(order[lo + r]);
                 }
 
-                std::cout << "Training dep-bucket " << t
-                          << " [" << deps[order[lo]] << ", "
-                          << (t < actual_n_dep_tables - 1 ? deps[order[hi]] : std::numeric_limits<float>::infinity())
+                std::cout << "Training cv-bucket " << t
+                          << " [" << cvs[order[lo]] << ", "
+                          << (t < actual_n_cv_tables - 1 ? cvs[order[hi]] : std::numeric_limits<float>::infinity())
                           << ") with " << bucket_size << " queries." << std::endl;
 
                 init(alg_hnsw,
@@ -1544,7 +1551,7 @@ namespace hnswdis
                      k, metric, truncation_ratio, statics_length,
                      std::make_shared<MatrixXf>(bucket_queries),
                      std::make_shared<MatrixXi>(bucket_gt),
-                     dep_tables[t]);
+                     cv_tables[t]);
                 
                 accumulated_wae += wae * ((float)bucket_size / n);
             }
@@ -1622,14 +1629,14 @@ namespace hnswdis
             hnswlib::writeBinaryPOD(out, expected_recall);
             hnswlib::writeBinaryPOD(out, wae);
 
-            size_t n_dep = dep_tables.size();
-            hnswlib::writeBinaryPOD(out, n_dep);
-            for (const auto &t : dep_tables)
+            size_t n_cv = cv_tables.size();
+            hnswlib::writeBinaryPOD(out, n_cv);
+            for (const auto &t : cv_tables)
                 write_table(out, t);
 
-            size_t n_thresh = dep_centers.size();
+            size_t n_thresh = cv_centers.size();
             hnswlib::writeBinaryPOD(out, n_thresh);
-            for (float v : dep_centers)
+            for (float v : cv_centers)
                 hnswlib::writeBinaryPOD(out, v);
 
             out.close();
@@ -1646,16 +1653,16 @@ namespace hnswdis
             hnswlib::readBinaryPOD(in, expected_recall);
             hnswlib::readBinaryPOD(in, wae);
 
-            size_t n_dep;
-            hnswlib::readBinaryPOD(in, n_dep);
-            dep_tables.resize(n_dep);
-            for (auto &t : dep_tables)
+            size_t n_cv;
+            hnswlib::readBinaryPOD(in, n_cv);
+            cv_tables.resize(n_cv);
+            for (auto &t : cv_tables)
                 read_table(in, t);
 
             size_t n_thresh;
             hnswlib::readBinaryPOD(in, n_thresh);
-            dep_centers.resize(n_thresh);
-            for (float &v : dep_centers)
+            cv_centers.resize(n_thresh);
+            for (float &v : cv_centers)
                 hnswlib::readBinaryPOD(in, v);
 
             in.close();
@@ -1673,11 +1680,11 @@ namespace hnswdis
 
         const EfRecallTable &get_ef_recall_estimators() const { return ef_recall_estimators; }
 
-        const std::vector<EfRecallTable> &get_all_tables() const { return dep_tables; }
+        const std::vector<EfRecallTable> &get_all_tables() const { return cv_tables; }
 
-        const std::vector<float> &get_dep_centers() const { return dep_centers; }
+        const std::vector<float> &get_cv_centers() const { return cv_centers; }
 
-        bool has_dep_tables() const { return !dep_tables.empty(); }
+        bool has_cv_tables() const { return !cv_tables.empty(); }
 
         float get_expected_recall() const { return expected_recall; }
 

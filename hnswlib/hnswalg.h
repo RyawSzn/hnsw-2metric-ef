@@ -1351,6 +1351,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         const size_t statics_length,
         const hnswdis::ApproximatedScoreCalculator& score_calculator,
         hnswdis::Sketch* sketch = nullptr,
+        float* out_cv = nullptr,
         BaseFilterFunctor* isIdAllowed = nullptr,
         bool print_ef = false // flag to print ef used in search, which is used to understand the distribution of actually used ef in the queries
     ) const {
@@ -1397,11 +1398,11 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         bool bare_bone_search = !num_deleted_ && !isIdAllowed;
         if (bare_bone_search) {
             base_layer_result = adaptiveSearchBaseLayerST<true>(
-                    currObj, query_data, std::max(ef_, k), statics_length, score_calculator, sketch, curdist, isIdAllowed);
+                    currObj, query_data, std::max(ef_, k), statics_length, score_calculator, sketch, out_cv, isIdAllowed);
             top_candidates = std::move(base_layer_result.first);
         } else {
             base_layer_result = adaptiveSearchBaseLayerST<false>(
-                    currObj, query_data, std::max(ef_, k), statics_length, score_calculator, sketch, curdist, isIdAllowed);
+                    currObj, query_data, std::max(ef_, k), statics_length, score_calculator, sketch, out_cv, isIdAllowed);
             top_candidates = std::move(base_layer_result.first);
         }
 
@@ -1427,7 +1428,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         size_t statics_length,
         const hnswdis::ApproximatedScoreCalculator& score_calculator,
         hnswdis::Sketch* sketch,
-        dist_t d_ep = 0,
+        float* out_cv = nullptr,
         BaseFilterFunctor* isIdAllowed = nullptr,
         BaseSearchStopCondition<dist_t>* stop_condition = nullptr,
         bool print_ef = false
@@ -1532,8 +1533,26 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                     if (edge_evals.size() == statics_limit) {
                         flag_collect_statistics = false;
                         score = score_calculator.compute_score(data_point, *((size_t *) dist_func_param_), edge_evals.data(), edge_evals.size());
+                        float cv = 0.0f;
+                        if (top_candidates.size() > 1) {
+                            auto temp_q = top_candidates;
+                            float sum = 0.0f, sum_sq = 0.0f;
+                            int q_size = temp_q.size();
+                            while (!temp_q.empty()) {
+                                float d = temp_q.top().first;
+                                sum += d;
+                                sum_sq += d * d;
+                                temp_q.pop();
+                            }
+                            float mean = sum / q_size;
+                            if (mean > 1e-6f) {
+                                float variance = std::max(0.0f, (sum_sq / q_size) - (mean * mean));
+                                cv = std::sqrt(variance) / mean;
+                            }
+                        }
+                        if (out_cv) *out_cv = cv;
                         if (sketch) {
-                            ef = sketch->estimate_ef2(score, d_ep); // used for estimating ef
+                            ef = sketch->estimate_ef2(score, cv); // used for estimating ef
                             if (ef < ef_copy) {
                                 ef = ef_copy;
                             }
@@ -1621,6 +1640,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         const size_t statics_length,
         const hnswdis::ApproximatedScoreCalculator& score_calculator,
         hnswdis::Sketch* sketch = nullptr,
+        float* out_cv = nullptr,
         BaseFilterFunctor* isIdAllowed = nullptr) const {
 
         std::priority_queue<std::pair<dist_t, labeltype >> result;
@@ -1667,11 +1687,11 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
 
         if (bare_bone_search) {
             top_candidates = adaptiveSearchBaseLayerST2<true>(
-                    currObj, query_data, std::max(ef_, k), statics_length, score_calculator, sketch, curdist, isIdAllowed);
+                    currObj, query_data, std::max(ef_, k), statics_length, score_calculator, sketch, out_cv, isIdAllowed);
 
         } else {
             top_candidates = adaptiveSearchBaseLayerST2<false>(
-                    currObj, query_data, std::max(ef_, k), statics_length, score_calculator, sketch, curdist, isIdAllowed);
+                    currObj, query_data, std::max(ef_, k), statics_length, score_calculator, sketch, out_cv, isIdAllowed);
 
         }
 
@@ -1697,7 +1717,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         size_t statics_length,
         const hnswdis::ApproximatedScoreCalculator& score_calculator,
         hnswdis::Sketch* sketch,
-        dist_t d_ep = 0,
+        float* out_cv = nullptr,
         BaseFilterFunctor* isIdAllowed = nullptr,
         BaseSearchStopCondition<dist_t>* stop_condition = nullptr) const {
 
@@ -1800,8 +1820,26 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                     if (edge_evals.size() == statics_limit) {
                         flag_collect_statistics = false;
                         score = score_calculator.compute_score(data_point, *((size_t *) dist_func_param_), edge_evals.data(), edge_evals.size());
+                        float cv = 0.0f;
+                        if (top_candidates.size() > 1) {
+                            auto temp_q = top_candidates;
+                            float sum = 0.0f, sum_sq = 0.0f;
+                            int q_size = temp_q.size();
+                            while (!temp_q.empty()) {
+                                float d = temp_q.top().first;
+                                sum += d;
+                                sum_sq += d * d;
+                                temp_q.pop();
+                            }
+                            float mean = sum / q_size;
+                            if (mean > 1e-6f) {
+                                float variance = std::max(0.0f, (sum_sq / q_size) - (mean * mean));
+                                cv = std::sqrt(variance) / mean;
+                            }
+                        }
+                        if (out_cv) *out_cv = cv;
                         if (sketch) {
-                            ef = sketch->estimate_ef2(score, d_ep);  // get estimated ef
+                            ef = sketch->estimate_ef2(score, cv);  // get estimated ef
                             if (ef < ef_copy) {
                                 ef = ef_copy;
                             }
